@@ -1,0 +1,46 @@
+#! /bin/bash
+
+msg="First commit"
+
+flist=""
+
+#flist="$flist LICENSE"
+#flist="$flist README.md"
+#flist="$flist .gitignore"
+flist="$flist devupdate"
+
+flist="$flist bin"
+flist="$flist lib"
+flist="$flist tests"
+
+# cd docs
+# sphinx-apidoc -MePT -o source/graphiquiner_plugins ../graphiquiner_plugins/
+# sphinx-apidoc -MePT -o source/graphiquiner_lib ../graphiquiner_lib/
+# make html
+# cd ..
+
+minor="$1"
+
+base_version=$( cat VERSION | sed 's/\.[^.]*$//g' )
+
+if [ ! "$minor" ]
+then
+    minor=$( cat VERSION | sed 's/.*\.//g' )
+    let minor=$minor+1
+fi
+
+devversion="${base_version}.${minor}"
+
+echo $devversion > VERSION
+
+set -e
+git add VERSION
+
+for f in $flist
+do
+    git add $f
+done
+
+git commit -m "$msg"
+git push master
+
