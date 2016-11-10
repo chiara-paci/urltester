@@ -4,9 +4,9 @@ msg="First commit"
 
 flist=""
 
-#flist="$flist LICENSE"
-#flist="$flist README.md"
-#flist="$flist .gitignore"
+flist="$flist LICENSE"
+flist="$flist README.md"
+flist="$flist .gitignore"
 flist="$flist devupdate"
 
 flist="$flist bin"
