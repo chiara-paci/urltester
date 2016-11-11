@@ -30,9 +30,8 @@ def application (environ, start_response):
 
     return [response_body]
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-v","--version", action="version", version="%(prog)s "+urltester.config.VERSION)
-
+parser = argparse.ArgumentParser(description="UrlTester Server")
+parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
 
 args=parser.parse_args(sys.argv[1:])
 
