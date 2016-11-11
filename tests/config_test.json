@@ -1,0 +1,32 @@
+[
+    {
+        "context": "context1", 
+        "title": "Titolo di context1", 
+        "url": "http://sito.prova.it/pinco/pallo?ghye&3", 
+        "affects": "Turismo, SIU, Collaudi regionali, IAM, etc", 
+        "timeout": 30, 
+        "status_ok": "any"
+    }, 
+    {
+        "context": "abc345", 
+        "title": "Titolo di abc 345", 
+        "url": "http://sito.prova.it/pinco", 
+        "affects": "Turismo, SI", 
+        "timeout": 45, 
+        "status_ok": [
+            "200", 
+            "404"
+        ]
+    }, 
+    {
+        "context": "qef", 
+        "title": "Qef", 
+        "url": "http://sito.prova.it/pinco/pallo%20gsh", 
+        "affects": "Collaudi regionali, IAM, etc", 
+        "timeout": 60, 
+        "status_ok": [
+            "200:399", 
+            "404"
+        ]
+    }
+]

@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
 import os
-from selenium import webdriver
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+import urllib2
 import unittest
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +16,7 @@ class UrllibPageTest(object):
     def __call__(self,cls):
         f=urllib2.urlopen(self.url,timeout=2)
         print f.read()
+        f.close()
         
 class UrllibTestMixin(object):
     base_url="http://localhost:9876"
