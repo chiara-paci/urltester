@@ -12,20 +12,6 @@ sys.path.append(PARENT_DIR+"/lib/python")
 import urltester.config
 import urltester.server
 
-def application (environ, start_response):
-
-    # Sorting and stringifying the environment key, value pairs
-    response_body = 'Ciao\n'.join(response_body)
-
-    status = '200 OK'
-    response_headers = [
-        ('Content-Type', 'text/plain'),
-        ('Content-Length', str(len(response_body)))
-    ]
-    start_response(status, response_headers)
-
-    return [response_body]
-
 parser = argparse.ArgumentParser(description="UrlTester Server")
 parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
 parser.add_argument("-S","--server", action="store_true", help="Run as server",dest="run_server")
@@ -74,4 +60,7 @@ if args.show_config:
 
 if args.run_demo:
     urltester.run_demo()
+
+if args.run_server:
+    urltester.run_server()
 
