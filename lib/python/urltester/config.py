@@ -3,7 +3,15 @@ import json
 import os
 import re
 
+## config section
+
 BASE_DIR=u"/home/chiara/urltester"
+VERSION_FILE=BASE_DIR+"/VERSION"
+
+## stop editing
+fd=open(VERSION_FILE)
+VERSION=fd.read().strip()
+fd.close()
 
 def to_unicode(S):
     if type(S)==unicode: return S
@@ -113,7 +121,8 @@ class TestDescription(object):
 class Settings(object):
     def __init__(self,http_host=u"localhost",http_port=9876,
                  paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester Settings",
-                 template_dir=BASE_DIR+u"/var/templates"): 
+                 template_dir=BASE_DIR+u"/var/templates",
+                 proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u""): 
         if type(paths) in [list,tuple]:
             self.paths=paths
         elif type(paths) in [unicode,str,int]:
@@ -123,11 +132,19 @@ class Settings(object):
 
         self.title=to_unicode(title)
         self.http_host=to_unicode(http_host)
+        self.proxy_host=to_unicode(proxy_host)
+        self.proxy_user=to_unicode(proxy_user)
+        self.proxy_password=to_unicode(proxy_password)
 
         try:
             self.http_port=int(http_port)
         except ValueError, e:
             raise SettingsException("http_port","int",http_port)
+
+        try:
+            self.proxy_port=int(proxy_port)
+        except ValueError, e:
+            raise SettingsException("proxy_port","int",proxy_port)
 
         if type(template_dir) not in [str,unicode,int]:
             raise SettingsException("template_dir","unicode",template_dir)

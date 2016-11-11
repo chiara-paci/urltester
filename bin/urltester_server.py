@@ -1,5 +1,18 @@
 #! /usr/bin/env python
 
+import argparse
+import sys
+import os
+
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(BASE_DIR)
+
+print PARENT_DIR+"/lib/python"
+
+sys.path.append(PARENT_DIR+"/lib/python")
+import urltester.config
+
+
 # Python's bundled WSGI server
 from wsgiref.simple_server import make_server
 
@@ -16,6 +29,13 @@ def application (environ, start_response):
     start_response(status, response_headers)
 
     return [response_body]
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v","--version", action="version", version="%(prog)s "+urltester.config.VERSION)
+
+
+args=parser.parse_args(sys.argv[1:])
+
 
 # Instantiate the server
 httpd = make_server (
