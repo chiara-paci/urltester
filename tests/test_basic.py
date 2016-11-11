@@ -45,7 +45,7 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
     config_example=BASE_DIR+"/config_test.json"
     base_dir=urltester.config.BASE_DIR
     default_paths=[ base_dir+u"/etc/urltester.conf" ]
-    default_title=u"UrlTester Settings"
+    default_title=u"UrlTester"
     default_http_host=u"localhost"
     default_http_port=9876
     default_proxy_host=u""

@@ -118,9 +118,16 @@ class TestDescription(object):
         self.timeout=tdict[u"timeout"]
         self.check_status=CheckStatus(tdict[u"status_ok"])
 
+    def show_config(self,prefix=u"    "):
+        print prefix+self.title
+        print prefix+self.url
+        print prefix+"Affects:   "+self.affects
+        print prefix+"Timeout:   "+unicode(self.timeout)+" sec"
+        print prefix+"Status OK: "+unicode(self.check_status.status_ok_defs)
+
 class Settings(object):
     def __init__(self,http_host=u"localhost",http_port=9876,
-                 paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester Settings",
+                 paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester",
                  template_dir=BASE_DIR+u"/var/templates",
                  proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u""): 
         if type(paths) in [list,tuple]:
@@ -167,3 +174,33 @@ class Settings(object):
 
     def __unicode__(self): 
         return self.title
+
+    def show_config(self):
+        print self.title
+        print
+        print "Configuration files:"
+        for conf in self.paths:
+            print "    "+conf
+        print "Binding:"
+        print "    hostname: "+self.http_host
+        print "    port:     "+str(self.http_port)
+        if self.proxy_host:
+            print "Proxy:"
+            print "    hostname: "+self.proxy_host
+            print "    port:     "+str(self.proxy_port)
+            if self.proxy_user:
+                print "    user:     "+self.proxy_user
+                print "    password: "+self.proxy_password
+        print "Template dir: "+self.template_dir
+        print
+        print "Test list"
+        print "---------"
+        print
+        for context,test_desc in self.url_defs.items():
+            print "/"+context+"/"
+            test_desc.show_config()
+            print
+
+
+        #self.url_defs=collections.OrderedDict()
+
