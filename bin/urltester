@@ -10,8 +10,8 @@ PARENT_DIR = os.path.dirname(BASE_DIR)
 print PARENT_DIR+"/lib/python"
 
 sys.path.append(PARENT_DIR+"/lib/python")
-import urltester.config
 
+import urltester.config
 
 # Python's bundled WSGI server
 from wsgiref.simple_server import make_server
@@ -32,16 +32,19 @@ def application (environ, start_response):
 
 parser = argparse.ArgumentParser(description="UrlTester Server")
 parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
+parser.add_argument("-S","--server", action="store_true", help="Run as server",dest="run_server")
 
 args=parser.parse_args(sys.argv[1:])
 
 
-# Instantiate the server
-httpd = make_server (
-    'localhost', # The host name
-    9876, # A port number where to wait for the request
-    application # The application object name, in this case a function
-)
+if args.run_server:
 
-# Wait for a single request, serve it and quit
-httpd.serve_forever()
+    # Instantiate the server
+    httpd = make_server (
+        'localhost', # The host name
+        9876, # A port number where to wait for the request
+        application # The application object name, in this case a function
+    )
+    
+    # Wait for a single request, serve it and quit
+    httpd.serve_forever()

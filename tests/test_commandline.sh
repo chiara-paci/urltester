@@ -24,13 +24,13 @@ $ut_server -v        || assert_msg "version (v)"
 
 for opt in http_host title template_dir proxy_host proxy_user proxy_password
 do
-    $ut_server --test --$opt="pippo" || assert_msg "$opt"
+    $ut_server --$opt="pippo" || assert_msg "$opt"
 done
 
 for opt in http_port proxy_port
 do
-    $ut_server --test --$opt=3456 || assert_msg "$opt"
-    if $ut_server --test --$opt="ciao"
+    $ut_server --$opt=3456 || assert_msg "$opt"
+    if $ut_server --$opt="ciao"
     then
 	assert_msg "$opt (no)"
     fi
