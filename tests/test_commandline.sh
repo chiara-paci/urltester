@@ -102,4 +102,7 @@ kill  $pid
 echo "After: $pid"
 ps -elf | grep $pid
 
-echo "All tests ok"
+echo "-------------------------------"
+echo
+echo "Command line: All tests ok"
+echo

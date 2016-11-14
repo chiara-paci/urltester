@@ -12,6 +12,8 @@ flist="$flist devupdate"
 flist="$flist bin"
 flist="$flist lib"
 flist="$flist tests"
+flist="$flist etc"
+flist="$flist wsgi"
 
 # cd docs
 # sphinx-apidoc -MePT -o source/graphiquiner_plugins ../graphiquiner_plugins/

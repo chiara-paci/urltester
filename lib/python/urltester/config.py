@@ -8,6 +8,13 @@ import re
 BASE_DIR=u"/home/chiara/urltester"
 VERSION_FILE=BASE_DIR+"/VERSION"
 
+TEMPLATE_NAMES = {
+    "config": "config.html",
+    "environ": "environ.html",
+    "homepage": "index.html",
+    "test": "test.html"
+}
+
 ## stop editing
 fd=open(VERSION_FILE)
 VERSION=fd.read().strip()
@@ -130,6 +137,8 @@ class Settings(object):
                  paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester",
                  template_dir=BASE_DIR+u"/var/templates",
                  proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u""): 
+        self.version=VERSION
+
         if type(paths) in [list,tuple]:
             self.paths=paths
         elif type(paths) in [unicode,str,int]:

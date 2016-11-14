@@ -52,7 +52,7 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
     default_proxy_port=3128
     default_proxy_user=u""
     default_proxy_password=u""
-    default_template_dir=base_dir+u"/var/templates"
+    default_template_dir=base_dir+u"/etc/templates"
 
     def setUp(self):  
         pass
@@ -63,8 +63,12 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
     def _test_settings_base(self,settings,http_host,http_port,paths,title,template_dir,
                             proxy_host,proxy_port,proxy_user,proxy_password):
         self.assertEqual(title,unicode(settings))
+
         self.assertHasAttribute(settings,"paths")
         self.assertEqual(settings.paths,paths)
+
+        self.assertHasAttribute(settings,"version")
+        self.assertEqual(settings.version,urltester.config.VERSION)
 
         self.assertHasAttribute(settings,"http_host")
         self.assertIsString(settings.http_host)
