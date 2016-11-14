@@ -6,6 +6,7 @@ import sys
 import random
 import string
 import jinja2
+import collections
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(BASE_DIR)
@@ -74,6 +75,34 @@ class StartResponseFactory(object):
         self.cls.assertIn(k.lower(),self.response_headers.keys())
         self.cls.assertEquals(str(size),self.response_headers[k])
 
+class FunctionTest(unittest.TestCase,AssertCollectionMixin):
+    def _check_is_page(self,server,path,page_class):
+        page=server.path_map(path)
+        self.assertIsInstance(page,page_class)
+
+    def test_path_map(self):
+        settings=urltester.config.Settings()
+        server=urltester.server.UrlTester(settings)
+        self.assertHasAttribute(server,"path_map")
+        self._check_is_page(server,"",urltester.server.HomePage)
+        self._check_is_page(server,"/",urltester.server.HomePage)
+        self._check_is_page(server,"/config",urltester.server.ConfigPage)
+        self._check_is_page(server,"/config/",urltester.server.ConfigPage)
+        self._check_is_page(server,"/environ",urltester.server.EnvironPage)
+        self._check_is_page(server,"/environ/",urltester.server.EnvironPage)
+
+
+        for testurl in settings.url_defs.keys():
+            self._check_is_page(server,"/"+testurl,urltester.server.TestPage)
+            self._check_is_page(server,"/"+testurl+"/",urltester.server.TestPage)
+
+        for iteration in range(0,10):
+            L=random.choice(range(1,50))
+            testurl=random_string(L)
+            while testurl in [ "environ","config" ]+settings.url_defs.keys(): testurl=random_string(L)
+            self._check_is_page(server,"/"+testurl,urltester.server.Error404Page)
+            self._check_is_page(server,"/"+testurl+"/",urltester.server.Error404Page)
+
 class GenerationTest(unittest.TestCase,AssertCollectionMixin):
 
     #config_example=BASE_DIR+"/config_test.json"
@@ -98,9 +127,6 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
     def tearDown(self):  
         pass
 
-    def test_functions(self):
-        pass
-
     def _test_path(self,application,environ,status,headers):
         start_response=StartResponseFactory(self,environ,status,headers)
         response_body_list=application(environ,start_response)
@@ -114,7 +140,6 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
         server=urltester.server.UrlTester(settings)
         self.assertHasAttribute(server,"application")
         application=server.application
-        def dummy_start_response(status,response_headers): pass
         environ={
             "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
             "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
@@ -143,12 +168,37 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
             response_body_2=self._test_path(application,environ,"404 Not Found",{})
             #self.assertEquals(response_body_1,response_body_2)
 
+    def _test_template_rendering(self,server,environ,testurl,template_id,context):
+        self.assertHasAttribute(server,"application")
+        application=server.application
+
+        if testurl=="":
+            environ["PATH_INFO"]=""
+        else:
+            environ["PATH_INFO"]="/"+testurl
+        response_body_1=self._test_path(application,environ,"200 OK",{})
+        environ["PATH_INFO"]+="/"
+        response_body_2=self._test_path(application,environ,"200 OK",{})
+        
+        self.assertEquals(response_body_1,response_body_2)
+
+        context["base_url"]=environ["SCRIPT_NAME"]
+
+        response_template=apply_template(server.settings,
+                                         urltester.config.TEMPLATE_NAMES[template_id],
+                                         context)
+
+        template_rows=response_template.split('\n')
+        body_rows=response_body_1.split('\n')
+        self.assertEquals(len(template_rows),len(body_rows))
+        L=len(template_rows)
+        for n in range(0,L):
+            self.assertEquals(template_rows[n],body_rows[n])
+
     def test_config(self):
         settings=urltester.config.Settings()
         server=urltester.server.UrlTester(settings)
-        self.assertHasAttribute(server,"application")
-        application=server.application
-        def dummy_start_response(status,response_headers): pass
+
         environ={
             "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
             "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
@@ -157,17 +207,74 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
             "SERVER_PROTOCOL": "http"
         }
 
-        testurl="config"
+        self._test_template_rendering(server,environ,"config","config",
+                                      { "title": settings.title+": configuration",
+                                        "settings": server.settings })
+    def test_environ(self):
+        settings=urltester.config.Settings()
+        server=urltester.server.UrlTester(settings)
+        environ={
+            "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
+            "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
+            "QUERY_STRING": random_string(size=random.choice(range(0,1000))),
+            "CONTENT_TYPE": "text/html",
+            "SERVER_PROTOCOL": "http"
+        }
 
-        environ["PATH_INFO"]="/"+testurl
-        response_body_1=self._test_path(application,environ,"200 OK",{})
-        environ["PATH_INFO"]+="/"
-        response_body_2=self._test_path(application,environ,"200 OK",{})
+        local_environ=collections.OrderedDict()
+        keys=environ.keys()+["PATH_INFO"]
+        keys.sort()
+        for k in keys:
+            if k=="PATH_INFO":
+                local_environ[k]="/environ/"
+                continue
+            local_environ[k]=environ[k]
+            
+        self._test_template_rendering(server,environ, "environ","environ",
+                                      { "title": settings.title+": environment",
+                                        "environ": local_environ })
         
-        self.assertEquals(response_body_1,response_body_2)
 
-        response_template=apply_template(settings,urltester.config.TEMPLATE_NAMES["config"],{})
-        print response_template
+    ### deve fare tutti i test
+    def test_homepage(self):
+        settings=urltester.config.Settings()
+        server=urltester.server.UrlTester(settings)
+
+        action="notest"
+
+        environ={
+            "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
+            "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
+            "QUERY_STRING": "action="+action,
+            "CONTENT_TYPE": "text/html",
+            "SERVER_PROTOCOL": "http"
+        }
+
+        self._test_template_rendering(server,environ,"","homepage",
+                                      { "title": settings.title,
+                                        "settings": server.settings,
+                                        "action": action })
+
+    def test_test(self):
+        settings=urltester.config.Settings()
+        server=urltester.server.UrlTester(settings)
+
+        action=random_string(size=random.choice(range(0,10)))
+        environ={
+            "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
+            "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
+            "QUERY_STRING": "action="+action,
+            "CONTENT_TYPE": "text/html",
+            "SERVER_PROTOCOL": "http"
+        }
+
+        for testurl in settings.url_defs.keys():
+            self._test_template_rendering(server,environ,testurl,"test",
+                                          { "title": settings.title+": "+testurl,
+                                            "settings": server.settings,
+                                            "action": action,
+                                            "test_name": testurl,
+                                            "test_description": settings.url_defs[testurl] })
         
 
 if __name__ == '__main__':  

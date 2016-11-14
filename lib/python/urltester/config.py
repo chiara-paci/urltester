@@ -12,7 +12,8 @@ TEMPLATE_NAMES = {
     "config": "config.html",
     "environ": "environ.html",
     "homepage": "index.html",
-    "test": "test.html"
+    "test": "test.html",
+    "404": "404.html",
 }
 
 ## stop editing
@@ -54,6 +55,9 @@ class CheckStatus(object):
 
     def __init__(self,status_ok_defs):
         self.status_ok_defs=self._is_ok(status_ok_defs)
+
+    def __str__(self):
+        return self.status_ok_defs
     
     def _is_ok(self,status_ok_defs):
         if type(status_ok_defs)==int: return status_ok_defs
@@ -135,7 +139,7 @@ class TestDescription(object):
 class Settings(object):
     def __init__(self,http_host=u"localhost",http_port=9876,
                  paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester",
-                 template_dir=BASE_DIR+u"/var/templates",
+                 template_dir=BASE_DIR+u"/etc/templates",
                  proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u""): 
         self.version=VERSION
 

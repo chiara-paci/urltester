@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Configuration files</h2>
+
+<ul>
+  {% for f in settings.paths %}
+  <li>{{ f }}</li>
+  {% endfor %}
+</ul>
+
+<h2>General configuration</h2>
+
+<table>
+  <tr><th colspan="2">parameter</th><th>value</th></tr>
+  <tr><td colspan="2">version</td><td>{{ settings.VERSION }}</td></tr>
+  <tr><td rowspan="2">http</td><td>host</td><td>{{ settings.http_host }}</td></tr>
+  <tr><td>port</td><td>{{ settings.http_port }}</td></tr>
+  <tr><td rowspan="4">proxy</td><td>host</td><td><td>{{ settings.proxy_host }}</td></tr>
+  <tr><td>port</td><td><td>{{ settings.proxy_port }}</td></tr>
+  <tr><td>username</td><td><td>{{ settings.proxy_user }}</td></tr>
+  <tr><td>password</td><td><td>*******</td></tr>
+  <tr><td colspan="2">templates</td><td>{{ settings.template_dir }}</td></tr>
+</table>
+
+<h2>Tests</h2>
+
+<table>
+  <tr>
+    <th>context</th>
+    <th colspan="2"></th>
+    <th>url</th>
+    <th>affects</th>
+    <th>timeout</th>
+    <th>status ok</th>
+  </tr>
+
+  {% for label,test in settings.url_defs.items() %}
+  <tr>
+    <td>{{ base_url }}/{{ test.context }}/</td>
+    <td>{{ test.context }}</td>
+    <td>{{ test.title }}</td>
+    <td>{{ test.url }}</td>
+    <td>{{ test.affects }}</td>
+    <td>{{ test.timeout }}</td>
+    <td>{{ test.check_status }}</td>
+  </tr>
+  {% endfor %}
+
+</table>
+
+{% endblock %}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="it" xml:lang="it">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+
+  {# 
+  <link rel="icon" href="" type="image/png"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'css/graphiquiner.css' %}"/>
+  #}
+</head>
+
+<body>
+  {% block body %}
+
+  <div id="header">
+    <div class="header-title">{{ title }}</div>
+  </div>
+
+  <div id="main">
+
+    {% block main %}
+    
+    <!-- Page content -->
+    <div id="content">
+      
+      {% block content %}{% endblock content %}
+
+    </div>
+
+    {% endblock main %}
+
+  </div>
+
+  <a name="footer"></a>
+  <div id="footer">
+     &copy; 2016 <a href="http://www.eng.it">Engineering.mo S.p.A.</a> <br/>
+  </div>
+  
+  {% endblock body %}
+</body>
+</html>

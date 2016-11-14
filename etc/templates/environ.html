@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table>
+  <tr><th colspan="2">parameter</th><th>value</th></tr>
+  {% for key,val in environ.items() %}
+  <tr>
+    <td>{{ key }}</td>
+    <td>{{ val }}</td>
+  </tr>
+  {% endfor %}
+
+</table>
+
+{% endblock %}
