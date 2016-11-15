@@ -19,14 +19,29 @@
         ]
     }, 
     {
+        "ssl_client_cert": "pippo", 
+        "timeout": 60, 
         "context": "qef", 
         "title": "Qef", 
         "url": "http://sito.prova.it/pinco/pallo%20gsh", 
         "affects": "Collaudi regionali, IAM, etc", 
-        "timeout": 60, 
         "status_ok": [
             "200:399", 
             "404"
+        ], 
+        "ssl_client_key": "pippo"
+    }, 
+    {
+        "context": "qefghq", 
+        "title": "Qef Ghq", 
+        "url": "http://sito.prova2.it/pinco/pallo%20gsh", 
+        "affects": "Collaudi regionali, IAM, etc", 
+        "no_ssl_v2": true, 
+        "timeout": 60, 
+        "status_ok": [
+            "200:399", 
+            "404", 
+            500
         ]
     }
 ]

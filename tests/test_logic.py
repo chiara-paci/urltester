@@ -53,6 +53,11 @@ class AssertCollectionMixin(object):
         if type(obj) in [list]: return
         self.fail(msg)
 
+    def get_server(self):
+        settings=urltester.config.Settings()
+        server=urltester.server.UrlTester(settings)
+        return server,settings
+
 class StartResponseFactory(object):
     def __init__(self,cls,environ,status,response_headers):
         self.check_status=status
@@ -81,8 +86,7 @@ class FunctionTest(unittest.TestCase,AssertCollectionMixin):
         self.assertIsInstance(page,page_class)
 
     def test_path_map(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
         self.assertHasAttribute(server,"path_map")
         self._check_is_page(server,"",urltester.server.HomePage)
         self._check_is_page(server,"/",urltester.server.HomePage)
@@ -136,8 +140,7 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
         return response_body_list[0]
 
     def test_application(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
         self.assertHasAttribute(server,"application")
         application=server.application
         environ={
@@ -194,10 +197,10 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
         L=len(template_rows)
         for n in range(0,L):
             self.assertEquals(template_rows[n],body_rows[n])
+        return response_template
 
     def test_config(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
 
         environ={
             "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
@@ -207,12 +210,14 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
             "SERVER_PROTOCOL": "http"
         }
 
-        self._test_template_rendering(server,environ,"config","config",
-                                      { "title": settings.title+": configuration",
-                                        "settings": server.settings })
+        response_template=self._test_template_rendering(server,environ,"config","config",
+                                                        { "title": settings.title+": configuration",
+                                                          "settings": server.settings })
+        print response_template
+        print settings.url_defs
+
     def test_environ(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
         environ={
             "SCRIPT_NAME": random_string(size=random.choice(range(0,1000))),
             "REQUEST_METHOD": random.choice(["get","post","put","delete","patch"]),
@@ -237,8 +242,7 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
 
     ### deve fare tutti i test
     def test_homepage(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
 
         action="notest"
 
@@ -256,8 +260,7 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
                                         "action": action })
 
     def test_test(self):
-        settings=urltester.config.Settings()
-        server=urltester.server.UrlTester(settings)
+        server,settings=self.get_server()
 
         action=random_string(size=random.choice(range(0,10)))
         environ={

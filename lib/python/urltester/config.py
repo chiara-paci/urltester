@@ -128,6 +128,21 @@ class TestDescription(object):
         self.affects=tdict[u"affects"]
         self.timeout=tdict[u"timeout"]
         self.check_status=CheckStatus(tdict[u"status_ok"])
+        self.no_ssl_v2=False
+        self.no_ssl_v3=False
+        self.ssl_check_certificate=True
+        self.ssl_client_key=""
+        self.ssl_client_cert=""
+        if "no_ssl_v2" in tdict.keys():
+            self.no_ssl_v2=tdict["no_ssl_v2"]
+        if "no_ssl_v3" in tdict.keys():
+            self.no_ssl_v3=tdict["no_ssl_v3"]
+        if "ssl_check_certificate" in tdict.keys():
+            self.ssl_check_certificate=tdict["ssl_check_certificate"]
+        if "ssl_client_key" in tdict.keys():
+            self.ssl_client_key=tdict["ssl_client_key"]
+        if "ssl_client_cert" in tdict.keys():
+            self.ssl_client_cert=tdict["ssl_client_cert"]
 
     def show_config(self,prefix=u"    "):
         print prefix+self.title

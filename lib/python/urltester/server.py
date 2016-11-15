@@ -5,6 +5,7 @@ import jinja2
 import collections
 
 import config
+import tester
 
 class Response(object):
     def __init__(self):
@@ -133,6 +134,11 @@ class TestPage(TemplatePage):
         return self.action_map[action](context,environ)
 
     def default(self,context,environ):
+        url=self.settings.url_defs[self.test_name].url
+        timeout=self.settings.url_defs[self.test_name].timeout
+        tester_obj=tester.Tester(self.test_name,url,timeout)
+        test_response=tester_obj.execute()
+        context["test_response"]=test_response
         return "200 OK",context
 
 class UrlTester(object):

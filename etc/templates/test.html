@@ -3,5 +3,24 @@
 {% block content %}
 <p>Test name: {{ test_name }}</p>
 <p>Action: {{ action }}</p>
-<p>Description: {{ test_description }}</p>
+
+
+<p>Url: {{ test_description.url }}</p>
+<p>Title: {{ test_description.title }}</p>
+<p>Affects: {{ test_description.affects }}</p>
+<p>Timeout: {{ test_description.timeout }}</p>
+<p>Status OK: {{ test_description.check_status }}</p>
+
+<h2>Response</h2>
+
+<p>Status: {{ test_response.status }}</p>
+<p>Time: {{ test_response.time }}</p>
+{% if test_response.msg %}
+<p>Msg: {{ test_response.msg }}</p>
+{% endif %}
+{% if test_response.errno != 0 %}
+<p>Errno: {{ test_response.errno }}</p>
+{% endif %}
+
+
 {% endblock %}

@@ -1,0 +1,26 @@
+[
+    {
+	"context": "local",
+	"url": "https://localhost",
+	"title": "SDI (Sistema Di Interscambio)",
+	"affects": "Finanziario - FatturaPA",
+	"timeout": 10,
+	"status_ok": "any",
+	"ssl_check_certificate": false,
+        "ssl_client_key": "/home/chiara/urltester/etc/certs/dummy_client.key",
+        "ssl_client_cert": "/home/chiara/urltester/etc/certs/dummy_client.pem"
+    },
+    {
+	"context": "spcsdi",
+	"url": "https://CentroServiziFatturaPA.spcoop.gov.it/openspcoop/PA",
+	"title": "SDI (Sistema Di Interscambio)",
+	"affects": "Finanziario - FatturaPA",
+	"timeout": 10,
+	"status_ok": "any",
+	"ssl_check_certificate": false,
+        "ssl_client_key": "/home/chiara/urltester/etc/certs/dummy_client.key",
+        "ssl_client_cert": "/home/chiara/urltester/etc/certs/dummy_client.pem",
+	"no_ssl_v3": true
+    }
+
+]

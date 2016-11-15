@@ -217,9 +217,20 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
                 u"title": u"Qef",
                 u"affects": u"Collaudi regionali, IAM, etc",
                 u"status_ok": [ u"200:399", u"404" ],
-                u"timeout": 60
-
+                u"timeout": 60,
+                u"ssl_client_key": "pippo",
+                u"ssl_client_cert": "pippo",
             },
+            {
+                u"context": u"qefghq",
+                u"url": u"http://sito.prova2.it/pinco/pallo%20gsh",
+                u"title": u"Qef Ghq",
+                u"affects": u"Collaudi regionali, IAM, etc",
+                u"status_ok": [ u"200:399", u"404", 500 ],
+                u"timeout": 60,
+                u"no_ssl_v2": True,
+            },
+            
         ]
 
         fd=open(self.config_example,"w")
@@ -228,6 +239,21 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         
         settings=urltester.config.Settings(paths=self.config_example)
         self._check_configuration(settings,[self.config_example],test_data)
+
+    def test_config_other(self):
+        test_data=[]
+        paths=["/home/chiara/urltester/tests/real_test.conf"]
+        for path in paths:
+            if not (os.path.isfile(path) and os.access(path, os.R_OK)):
+                continue
+            fd=open(path,"r")
+            data=json.load(fd)
+            fd.close()
+            test_data+=data
+
+        settings=urltester.config.Settings(paths=paths)
+
+        self._check_configuration(settings,paths,test_data)
 
     def _check_configuration(self,settings,paths,test_data):
         keys=[]
@@ -251,29 +277,19 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
             self.assertEquals(tdict[u"title"],settings.url_defs[k].title)
             self.assertEquals(tdict[u"affects"],settings.url_defs[k].affects)
             self.assertEquals(tdict[u"timeout"],settings.url_defs[k].timeout)
-
-
-        # def check_range(k,url_defs):
-        #     for n in range(100,599):
-        #         if k==u"context1":
-        #             msg="False for %s, %d" % ("context1",n)
-        #             self.assertTrue(url_defs[k].check_status(n),msg=msg)
-        #             continue
-        #         if n in [200,404]:
-        #             msg="False for %s, %d" % (k,n)
-        #             self.assertTrue(url_defs[k].check_status(n),msg=msg)
-        #             continue
-        #         if k==u"abc345":
-        #             msg="True for %s, %d" % (k,n)
-        #             self.assertFalse(url_defs[k].check_status(n),msg=msg)
-        #             continue
-        #         if n>=200 and n<=399:
-        #             msg="False for %s, %d" % (k,n)
-        #             self.assertTrue(url_defs[k].check_status(n),msg=msg)
-        #             continue
-        #         msg="True for %s, %d" % (k,n)
-        #         self.assertFalse(url_defs[k].check_status(n),msg=msg)
-
+            for attr in [ u"no_ssl_v2",u"no_ssl_v3",u"ssl_check_certificate",u"ssl_client_key",u"ssl_client_cert"]:
+                self.assertHasAttribute(settings.url_defs[k],attr)
+                val=settings.url_defs[k].__getattribute__(attr)
+                if attr in tdict.keys():
+                    self.assertEquals(tdict[attr],val)
+                    continue
+                if attr=="ssl_check_certificate":
+                    self.assertEquals(True,val)
+                elif attr in [ u"ssl_client_key",u"ssl_client_cert" ]:
+                    self.assertEquals("",val)
+                else:
+                    self.assertEquals(False,val)
+                    
 
     def test_check_status(self):
         # valori validi e significato per status_ok:

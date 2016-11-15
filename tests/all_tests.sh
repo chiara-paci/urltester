@@ -7,20 +7,22 @@ BIN_DIR=$PARENT_DIR/bin
 ut_server=$BIN_DIR/urltester
 
 function help {
-    echo "$0 -h | -A | -c | -b | -u | -l"
+    echo "$0 -h | -A | -c | -b | -u | -l | -t"
     echo
     echo "-b: basic"
     echo "-c: command line"
     echo "-u: urllib"
     echo "-l: logic"
+    echo "-t: tester"
 }
 
 commandline=""
 basic=""
 urllib=""
 logic=""
+tester=""
 
-while getopts "Phcbul" opzione
+while getopts "Phcbult" opzione
 do
     case $opzione in
 	h) help;exit;;
@@ -28,6 +30,14 @@ do
 	b) basic="yes";;
 	u) urllib="yes";;
 	l) logic="yes";;
+	t) tester="yes";;
+	A) 
+	    commandline="yes"
+            basic="yes"
+	    urllib="yes"
+	    logic="yes"
+	    tester="yes"
+	    ;;
     esac
 done
 
@@ -53,6 +63,16 @@ then
     echo "==========================================================="
     echo 
     ./test_logic.py
+    echo
+fi
+
+if [ "$tester" ]
+then
+    echo "==========================================================="
+    echo "Tester tests"
+    echo "==========================================================="
+    echo 
+    ./test_tester.py
     echo
 fi
 

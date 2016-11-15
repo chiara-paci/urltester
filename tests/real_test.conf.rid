@@ -1,0 +1,27 @@
+[
+    {
+        "context": "invalid", 
+        "title": "Non Esisto", 
+        "url": "http://www.nonesiste.pinco", 
+        "affects": "H, J", 
+        "timeout": 20, 
+        "status_ok": "any"
+    },
+    {
+	"context": "finto1",
+	"url": "http://prova-finto1.prova",
+	"title": "Impresa in un giorno/Infocamere",
+	"affects": "Sportello Unico per i comuni",
+	"timeout": 20,
+	"status_ok": "any"
+    },
+    {
+	"context": "cert-invalid",
+	"url": "https://localhost",
+	"title": "Certificato non valido",
+	"affects": "Sportello Unico per i comuni",
+	"timeout": 20,
+	"status_ok": "any"
+    }
+
+]
