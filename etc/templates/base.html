@@ -5,32 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}</title>
 
-  {# 
-  <link rel="icon" href="" type="image/png"/>
-  <link rel="stylesheet" type="text/css" href="{% static 'css/graphiquiner.css' %}"/>
-  #}
+  <link rel="icon" href="{{ static_url }}/img/icon.png" type="image/png"/>
+  <link rel="stylesheet" type="text/css" href="{{ static_url }}/css/urltester.css"/>
+  <link rel="stylesheet" type="text/css" href="{{ static_url }}/css/font-awesome.min-4.6.3.css"/>
+
 </head>
 
 <body>
   {% block body %}
 
+  <a name="header"></a>
   <div id="header">
     <div class="header-title">{{ title }}</div>
   </div>
 
+  <a name="menu"></a>
+  <div id="menu">
+    <a href="./">Home</a>
+    <a href="./config">Configuration</a>
+    <a href="./docs">Documentation</a>
+  </div>
+
+  <a name="main"></a>
   <div id="main">
 
-    {% block main %}
-    
     <!-- Page content -->
     <div id="content">
       
       {% block content %}{% endblock content %}
 
     </div>
-
-    {% endblock main %}
-
   </div>
 
   <a name="footer"></a>

@@ -54,13 +54,6 @@ class UrllibTestMixin(object):
     def tearDown(self):  
         pass
 
-    def test_base_url(self):
-        headers=self.base_headers
-        ptest=UrllibPageTest(self.base_url,200,"OK",headers)
-        ptest(self)
-        ptest=UrllibPageTest(self.base_url+"/",200,"OK",headers)
-        ptest(self)
-
 class UrllibTest(unittest.TestCase,UrllibTestMixin):
     def setUp(self):  
         UrllibTestMixin.setUp(self)
@@ -75,6 +68,13 @@ class UrllibTestConfigUrls(unittest.TestCase,UrllibTestMixin):
     def tearDown(self): 
         pass
     
+    def test_base_url(self):
+        headers=self.base_headers
+        ptest=UrllibPageTest(self.base_url,200,"OK",headers)
+        ptest(self)
+        ptest=UrllibPageTest(self.base_url+"/",200,"OK",headers)
+        ptest(self)
+
     def test_environ(self):
         headers=self.base_headers
         ptest=UrllibPageTest(self.base_url+"/environ",200,"OK",headers)

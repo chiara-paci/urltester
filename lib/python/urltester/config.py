@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import collections
 import json
 import os
@@ -10,11 +12,21 @@ VERSION_FILE=BASE_DIR+"/VERSION"
 
 TEMPLATE_NAMES = {
     "config": "config.html",
+    "docs": "docs.html",
     "environ": "environ.html",
     "homepage": "index.html",
     "test": "test.html",
     "404": "404.html",
 }
+
+MESSAGES = {
+    "all_ok": "Sistema correttamente funzionante",
+    "some_ok": "Problemi di connettività su alcuni host",
+    "ko": "Contattare SICUREZZA"
+}
+
+## rel. to base url (=script name in wsgi invocation)
+STATIC_REL_PATH = "static"
 
 ## stop editing
 fd=open(VERSION_FILE)

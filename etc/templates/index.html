@@ -6,4 +6,20 @@
 <li><a href="{{ base_url }}/{{ k }}/">[{{ k }}] {{ desc.title }}</a></li>
 {% endfor %}
 </ul>
+
+<p>Test time: {{ test_time }}</p>
+
+<p>Response list</p>
+<table>
+{% for testname,obj in res_collection.items() %}
+<tr>
+  <th>{{ testname }}</th>
+  <td>{{ obj.response.status }}</td>
+  <td>{{ obj.response.time }}</td>
+  <td>{{ obj.response.msg }}</td>
+  <td>{{ obj.response.errno }}</td>
+</tr>
+{% endfor %}
+</table>
+
 {% endblock %}

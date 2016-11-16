@@ -43,7 +43,8 @@ class TemplatePage(object):
         response=Response()
         context={
             "title": self.get_title(),
-            "base_url": environ["SCRIPT_NAME"]
+            "base_url": environ["SCRIPT_NAME"],
+            "static_url": environ["SCRIPT_NAME"]+"/"+config.STATIC_REL_PATH
         }
         status,context=self.elab(context,environ)
         response.body = self.apply_template(self.template_name,context)
@@ -58,16 +59,17 @@ class TemplatePage(object):
         T=T.encode('utf-8')
         return T
     
-class HomePage(TemplatePage):
-    template_name=config.TEMPLATE_NAMES["homepage"]
+class ConfigPage(TemplatePage):
+    template_name=config.TEMPLATE_NAMES["config"]
+    page_title="configuration"
 
     def elab(self,context,environ):
         context["settings"]=self.settings
         return "200 OK",context
 
-class ConfigPage(TemplatePage):
-    template_name=config.TEMPLATE_NAMES["config"]
-    page_title="configuration"
+class DocsPage(TemplatePage):
+    template_name=config.TEMPLATE_NAMES["docs"]
+    page_title="documentation"
 
     def elab(self,context,environ):
         context["settings"]=self.settings
@@ -100,17 +102,10 @@ class Error404Page(TemplatePage):
         context["path"]=self.path
         return "404 Not Found",context
 
-
-class TestPage(TemplatePage):
-    template_name=config.TEMPLATE_NAMES["test"]
-    
-    def __init__(self,test_name,settings): 
-        self.test_name=test_name
+class ActionPage(TemplatePage):
+    def __init__(self,settings): 
         TemplatePage.__init__(self,settings)
         self.action_map={ "default": self.default }
-
-    def get_title(self):
-        return self.settings.title+": "+self.test_name
 
     def elab(self,context,environ):
         query_dict={}
@@ -121,9 +116,6 @@ class TestPage(TemplatePage):
                 if len(t)!=2:
                     continue
                 query_dict[t[0]]=t[1]
-        context["settings"]= self.settings
-        context["test_name"]= self.test_name
-        context["test_description"]= self.settings.url_defs[self.test_name]
         if "action" in query_dict.keys():
             action=query_dict["action"]
         else:
@@ -134,11 +126,37 @@ class TestPage(TemplatePage):
         return self.action_map[action](context,environ)
 
     def default(self,context,environ):
-        url=self.settings.url_defs[self.test_name].url
-        timeout=self.settings.url_defs[self.test_name].timeout
-        tester_obj=tester.Tester(self.test_name,url,timeout)
+        return "200 OK",context
+
+class TestPage(ActionPage):
+    template_name=config.TEMPLATE_NAMES["test"]
+
+    def __init__(self,test_name,settings): 
+        self.test_name=test_name
+        ActionPage.__init__(self,settings)
+
+    def get_title(self):
+        return self.settings.title+": "+self.test_name
+
+    def default(self,context,environ):
+        context["settings"]= self.settings
+        context["test_name"]= self.test_name
+        context["test_description"]= self.settings.url_defs[self.test_name]
+        tester.urllib2_setup(self.settings)
+        tester_obj=tester.tester_factory(self.test_name,self.settings.url_defs)
         test_response=tester_obj.execute()
         context["test_response"]=test_response
+        return "200 OK",context
+
+class HomePage(ActionPage):
+    template_name=config.TEMPLATE_NAMES["homepage"]
+
+    def default(self,context,environ):
+        context["settings"]= self.settings
+        test_manager=tester.TestManager(self.settings)
+        test_time,res_collection=test_manager.run_threaded()
+        context["test_time"]=test_time
+        context["res_collection"]=res_collection
         return "200 OK",context
 
 class UrlTester(object):
@@ -175,6 +193,8 @@ class UrlTester(object):
             return HomePage(self.settings)
         if path in ["/config","/config/"]:
             return ConfigPage(self.settings)
+        if path in ["/docs","/docs/"]:
+            return DocsPage(self.settings)
         if path in ["/environ","/environ/"]:
             return EnvironPage(self.settings)
         if path in test_list:
