@@ -12,9 +12,9 @@ import urltester.config
 import urltester.server
 
 settings=urltester.config.Settings(paths=[
-    "/home/chiara/urltester/tests/real_test_corretti.conf",
-    "/home/chiara/urltester/tests/real_test_errori_socket.conf",
-    "/home/chiara/urltester/tests/real_test_errori_ssl.conf",
+    PARENT_DIR+"/tests/real_test_corretti.conf",
+    PARENT_DIR+"/tests/real_test_errori_socket.conf",
+    PARENT_DIR+"/tests/real_test_errori_ssl.conf",
 ])
 
 urltester=urltester.server.UrlTester(settings)
