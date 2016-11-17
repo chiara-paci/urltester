@@ -101,7 +101,7 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
         self.assertIsInstance(response_dict,collections.OrderedDict)
         for testname in settings.url_defs.keys():
             self.assertIn(testname,response_dict.keys())
-            test_response=response_dict[testname]
+            test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
             print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
 
@@ -113,9 +113,13 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
         self.assertIsInstance(response_dict,collections.OrderedDict)
         for testname in settings.url_defs.keys():
             self.assertIn(testname,response_dict.keys())
-            test_response=response_dict[testname]
+            test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
             print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+            test_ok=response_dict[testname]["ok"]
+            test_desc=response_dict[testname]["definition"]
+            self.assertEqual(test_desc,settings.url_defs[testname])
+            self.assertEqual(test_ok,settings.url_defs[testname].check_status(test_response.status))
             
 class SSLTesterTest(TesterTest):
     test_set=["/home/chiara/urltester/tests/real_test_errori_ssl.conf"]

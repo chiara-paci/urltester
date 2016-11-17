@@ -195,6 +195,7 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
         self.assertEquals(response_body_1,response_body_2)
 
         context["base_url"]=environ["SCRIPT_NAME"]
+        context["static_url"]=context["base_url"]+"/"+urltester.config.STATIC_REL_PATH
 
         response_template=apply_template(server.settings,
                                          urltester.config.TEMPLATE_NAMES[template_id],
@@ -254,6 +255,7 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
         response_body_2=self._test_path(application,environ,"200 OK",{})
 
         context["base_url"]=environ["SCRIPT_NAME"]
+        context["static_url"]=context["base_url"]+"/"+urltester.config.STATIC_REL_PATH
         response_template=apply_template(server.settings,
                                          urltester.config.TEMPLATE_NAMES[template_id],
                                          context)
@@ -276,10 +278,12 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
             self.assertIsDict(coll[testurl])
             self.assertIn("response",coll[testurl].keys())
             self.assertIn("definition",coll[testurl].keys())
+            self.assertIn("ok",coll[testurl].keys())
             self.assertEquals(coll[testurl]["definition"],settings.url_defs[testurl])
             self.assertEquals(coll[testurl]["response"],None)
             coll.add_response(testurl,resp)
             self.assertEquals(coll[testurl]["response"],resp)
+            self.assertEquals(coll[testurl]["ok"],settings.url_defs[testurl].check_status(resp.status))
             test_data[testurl]=resp
 
 
@@ -448,9 +452,9 @@ class RenderingTest(unittest.TestCase,AssertCollectionMixin):
         parser = MyHTMLParser(self,static_url,context["title"])
         parser.feed(response)
 
-        self.assertEqual(len(parser.body_tree.children),8)
+        self.assertEqual(len(parser.body_tree.children),6)
         
-        for k,val in [ (0,"header"),(2,"menu"),(4,"main"),(6,"footer") ]:
+        for k,val in [ (0,"header"),(2,"main"),(4,"footer") ]:
             self.assertEqual(parser.body_tree.children[k].name,"a")
             self.assertEqual(parser.body_tree.children[k]["name"],val)
             self.assertEqual(parser.body_tree.children[k+1].name,"div")
