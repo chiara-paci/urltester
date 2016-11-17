@@ -136,7 +136,7 @@ class TestPage(ActionPage):
         ActionPage.__init__(self,settings)
 
     def get_title(self):
-        return self.settings.title+": "+self.test_name
+        return self.settings.title+": "+self.settings.url_defs[self.test_name].title
 
     def default(self,context,environ):
         context["settings"]= self.settings
@@ -146,6 +146,7 @@ class TestPage(ActionPage):
         tester_obj=tester.tester_factory(self.test_name,self.settings.url_defs)
         test_response=tester_obj.execute()
         context["test_response"]=test_response
+        context["test_status"]=self.settings.url_defs[self.test_name].check_status(test_response.status)
         return "200 OK",context
 
 class HomePage(ActionPage):

@@ -83,6 +83,7 @@ class TestResponseCollection(collections.OrderedDict):
             self[testname]={
                 "response": None,
                 "definition": test_def,
+                "ok": False
             }
         self._ok_dict={}
 
@@ -102,13 +103,20 @@ class TestResponseCollection(collections.OrderedDict):
         some_ok=reduce(lambda x,y: x or y,self._ok_dict.values(),False)
         return all_ok or some_ok
 
+    @property
+    def all_ok(self):
+        all_ok=reduce(lambda x,y: x and y,self._ok_dict.values(),True)
+        return all_ok
+
+    @property
+    def some_ok(self):
+        some_ok=reduce(lambda x,y: x or y,self._ok_dict.values(),True)
+        return some_ok
+
     def add_response(self,testname,response):
         self[testname]["response"]=response
-        if response.status < 0: 
-            self._ok_dict[testname]=False
-            return
-        self._ok_dict[testname]=self[testname]["definition"].check_status(response.status)
-
+        self[testname]["ok"]=self[testname]["definition"].check_status(response.status)
+        self._ok_dict[testname]=self[testname]["ok"]
 
 class Tester(object):
     def __init__(self,test_name,url,timeout,

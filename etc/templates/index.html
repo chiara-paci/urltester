@@ -1,25 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+<!--
 <ul>
 {% for k,desc in settings.url_defs.items() %}
 <li><a href="{{ base_url }}/{{ k }}/">[{{ k }}] {{ desc.title }}</a></li>
 {% endfor %}
 </ul>
+-->
 
-<p>Test time: {{ test_time }}</p>
+{% if res_collection.all_ok %}
+<div class="status backgreen">
+  <i class="fa fa-thumbs-o-up"></i> OK
+</div>
+<div class="status backgreen">{{ res_collection.msg }} ({{ "%2.2f" |format(test_time) }} sec.)</div>
+{% elif res_collection.some_ok %}
+<div class="status backyellow"><i class="fa fa-thumbs-o-up"></i> OK</div>
+<div class="status backyellow">{{ res_collection.msg }} ({{ "%2.2f" |format(test_time) }} sec.)</div>
+{% else %}
+<div class="status backred"><i class="fa fa-thumbs-o-down"></i> KO</div>
+<div class="status backred">{{ res_collection.msg }} ({{ "%2.2f" |format(test_time) }} sec.)</div>
+{% endif %}
 
-<p>Response list</p>
 <table>
+<thead>
+  <tr>
+    <th colspan="2" rowspan="2">test</th>
+    <th colspan="1" rowspan="2">affects</th>
+
+    <th colspan="3">parameters</th>
+    <th colspan="4">result</th>
+    
+  </tr>
+  <tr>
+    <th>url</th>
+    <th>timeout (sec.)</th>
+    <th>valid status</th>
+
+    <th>code</th>
+    <th>time</th>
+    <th>error</th>
+    <th></th>
+    
+  </tr>
+
+</thead>
+
 {% for testname,obj in res_collection.items() %}
-<tr>
-  <th>{{ testname }}</th>
-  <td>{{ obj.response.status }}</td>
-  <td>{{ obj.response.time }}</td>
-  <td>{{ obj.response.msg }}</td>
-  <td>{{ obj.response.errno }}</td>
-</tr>
+<tbody class="{% if obj.ok %}rowgreen{% else %}rowred{% endif %}">
+  <tr>
+    <th><a href="{{ base_url }}/{{ obj.definition.context }}/">{{ obj.definition.context }}</a></th>
+    <td><a href="{{ base_url }}/{{ obj.definition.context }}/">{{ obj.definition.title }}</a></td>
+    
+    <td>{{ obj.definition.affects }}</td>
+    
+    <td>{{ obj.definition.url }}</td>
+    <td class="center">{{ obj.definition.timeout }}</td>
+    <td class="center">{{ obj.definition.check_status }}</td>
+    
+    <td class="center">{{ obj.response.status }}</td>
+    <td class="right">{{ "%2.2f" |format(obj.response.time) }}</td>
+    <td>{{ obj.response.msg }}</td>
+    <th class="center statuscell">
+      {% if obj.ok %}<i class="fa fa-thumbs-o-up"></i>
+      {% else %}<i class="fa fa-thumbs-o-down"></i>{% endif %}
+    </th>
+  </tr>
+</tbody>
 {% endfor %}
+
 </table>
 
 {% endblock %}

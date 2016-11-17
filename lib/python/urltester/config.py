@@ -20,9 +20,9 @@ TEMPLATE_NAMES = {
 }
 
 MESSAGES = {
-    "all_ok": "Sistema correttamente funzionante",
-    "some_ok": "Problemi di connettività su alcuni host",
-    "ko": "Contattare SICUREZZA"
+    "all_ok": u"Sistema correttamente funzionante",
+    "some_ok": u"Problemi di connettività su alcuni host",
+    "ko": u"Contattare SICUREZZA"
 }
 
 ## rel. to base url (=script name in wsgi invocation)
@@ -123,6 +123,7 @@ class CheckStatus(object):
         return status in range(status_min,status_max+1,step)
 
     def __call__(self,status):
+        if status < 0: return False
         if self.status_ok_defs == u"any":
             return True
         if type(self.status_ok_defs) in [str,unicode,int]:
