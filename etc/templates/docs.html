@@ -1,4 +1,118 @@
 {% extends "base.html" %}
 
 {% block content %}
+<h1>Configurazione dell'installazione</h1>
+
+<p>Bisogna editare il file <tt>lib/python/urltester/config.py</tt>, in
+particolare BASE_DIR deve corrispondere al path di installazione di
+UrlTester.</p>
+
+<a name="confwsgi"></a>
+<h1>Configurazione di WSGI</h1>
+
+<p>In wsgi/urltester.wsgi è necessario passare i parametri di configurazione all'oggetto Settings:</p>
+
+<pre>
+...
+settings=urltester.config.Settings(param1=val1, param2=val2, ...)
+...
+</pre>
+
+<p>Parametri di configurazione:</p>
+
+<table>
+<thead>
+  <tr>
+    <th>param</th>
+    <th>type</th>
+    <th>default</th>
+    <th>description</th>
+  </tr>
+</thead>
+
+{% for k,valdict in params_settings.items() %}
+<tbody>
+<tr>
+  <td>{{ k }}</td>
+  <td class="center">{{ valdict.type }}</td>
+  <td>{{ valdict.default }}</td>
+  <td>{{ valdict.doc }}</td>
+</tr>
+</tbody>
+{% endfor %}
+
+</table>
+
+<h1>Configurazione dei test</h1>
+
+<p>I test sono descritti nei file di configurazione del
+parametro <i>path</i> della <a href="#conwsgi">configurazione di
+WSGI</a></p>
+
+<p>I file di configurazione sono file json, con una lista di stanze che definiscono il test da eseguire:</p>
+
+<pre>
+[
+    {
+        "context": "gianozia", 
+        "title": "Gianozia Orientale", 
+        "url": "http://www.gianoziaorientale.org", 
+        "affects": "D,F,G", 
+        "timeout": 20, 
+        "status_ok": "any"
+    }, 
+    {
+        "context": "google-errore", 
+        "title": "Google Errore", 
+        "url": "http://www.google.it/yssuhaajjakd", 
+        "affects": "D,F,G", 
+        "timeout": 20, 
+        "status_ok": "any"
+    }, 
+    ...
+]
+</pre>
+
+<p>Parametri:</p>
+
+<table>
+<thead>
+  <tr>
+    <th>param</th>
+    <th>type</th>
+    <th>mand.</th>
+    <th>default</th>
+    <th>description</th>
+  </tr>
+</thead>
+
+{% for k,valdict in params_tests.items() %}
+<tbody>
+<tr>
+  <td>{{ k }}</td>
+  <td class="center">{{ valdict.type }}</td>
+  <td class="center">{% if valdict.mandatory %}<i class="fa fa-check"></i>{% endif %}</td>
+  <td>{{ valdict.default }}</td>
+  <td>{{ valdict.description }}</td>
+</tr>
+</tbody>
+{% endfor %}
+</table>
+
+<p>Gli stati http validi possono essere specificati come:</p>
+<ul>
+<li> La stringa <i>any</i>: tutti gli stati sono considerati validi e vengono segnalati solo gli errori di connessione.</li>
+<li>Un numero o una stringa numerica (ad es. 200).</li>
+<li>Una stringa <i>start:end</i> che indica un range (estremi
+inclusi). Ad es. "1:3" = 1,2,3</li>
+<li>Una stringa <i>start:step:end</i> che indica un range (estremi
+inclusi) di valori ogni <i>step</i>. Ad es. "3:2:9" = 3,5,7,9.</li>
+<li>Una lista di elementi come quelli dei punti precedenti (eccetto <i>any</i>). Ad es. [ 100, "200:299", "404:3:500" ].</li>
+</ul>
+
+<p>Sono stati  aggiunti due  stati speciali, 600  e 601,  che indicano
+errori nell'SSL  segnalati dal  server (cioè  in cui  è sicuro  che la
+connessione  è andata  a buon  fine),  ad esempio  perché il  certificato
+presentato dal client non è valido.</p>
+
 {% endblock %}

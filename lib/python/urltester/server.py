@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 # Python's bundled WSGI server
 import wsgiref.simple_server
 import random
 import jinja2
 import collections
+import inspect
 
 import config
 import tester
@@ -73,6 +76,52 @@ class DocsPage(TemplatePage):
 
     def elab(self,context,environ):
         context["settings"]=self.settings
+
+        context["params_settings"]=collections.OrderedDict()
+        args,varargs,keywords,defaults=inspect.getargspec(self.settings.__init__)
+        delta=len(args)-len(defaults)
+        for n in range(1,len(args)):
+            context["params_settings"][args[n]]={ "default": None,"doc": u"","type": None }
+            if hasattr(self.settings,args[n]):
+                attr=getattr(self.settings,args[n])
+                if type(attr)==int:
+                    context["params_settings"][args[n]]["type"]="int"
+                elif type(attr)==float:
+                    context["params_settings"][args[n]]["type"]="float"
+                elif type(attr)==list:
+                    context["params_settings"][args[n]]["type"]="string/list"
+                else:
+                    context["params_settings"][args[n]]["type"]="string"
+            if n<delta: continue
+            context["params_settings"][args[n]]["default"]=defaults[n-delta]
+
+        context["params_tests"]=collections.OrderedDict( [
+            ( "context", {"type": "str","mandatory": True,
+                          "description": "context della pagina del test"} ),
+            ( "url", {"type": "str","mandatory": True,
+                      "description": "url da testare"} ),
+            ( "title", {"type": "str","mandatory": True,
+                        "description": "nome descrittivo del test"} ),
+            ( "affects", {"type": "str","mandatory": True,
+                          "description": "elenco dei sistemi impattati"} ),
+            ( "timeout", {"type": "float","mandatory": True,
+                          "description": "timeout per l'apertura dell'url"} ),
+            ( "status_ok", {"type": "int/str/list","mandatory": True,
+                            "description": "status http che sono considerati validi (v. sotto)"} ),
+            ( "no_ssl_v2", {"type": "bool","mandatory": False,"default": "false",
+                            "description": "escludere l'SSLv2"} ),
+            ( "no_ssl_v3", {"type": "bool","mandatory": False,"default": "false",
+                            "description": "escludere l'SSLv3"} ),
+            ( "ssl_check_certificate", {"type": "bool","mandatory": False,"default": "true",
+                                        "description": u"verificare la validità del certificato ssl"} ),
+            ( "ssl_client_key", {"type": "str","mandatory": False,"default": "",
+                                 "description": "chiave per autenticazione del client"} ),
+            ( "ssl_client_cert", {"type": "str","mandatory": False,"default": "",
+                                  "description": "certificato per autenticazione del client"} ),
+        ] )
+
+        
+
         return "200 OK",context
 
 class EnvironPage(TemplatePage):

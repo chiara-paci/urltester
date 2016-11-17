@@ -8,6 +8,9 @@ import re
 ## config section
 
 BASE_DIR=u"/home/chiara/urltester"
+## rel. to base url (=script name in wsgi invocation)
+STATIC_REL_PATH = "static"
+
 VERSION_FILE=BASE_DIR+"/VERSION"
 
 TEMPLATE_NAMES = {
@@ -25,10 +28,10 @@ MESSAGES = {
     "ko": u"Contattare SICUREZZA"
 }
 
-## rel. to base url (=script name in wsgi invocation)
-STATIC_REL_PATH = "static"
 
+##########################
 ## stop editing
+
 fd=open(VERSION_FILE)
 VERSION=fd.read().strip()
 fd.close()

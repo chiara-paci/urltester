@@ -90,6 +90,10 @@ table {
     border-collapse: collapse;
 }
 
+code, pre {
+    margin: 2em;
+}
+
 .center {
     text-align: center;
 }
@@ -229,6 +233,13 @@ ul {
 	display: inline-block;
 	vertical-align: top;
 	line-height: 150%;
+    }
+
+    code,pre {
+	padding: 1em;
+	border: 1px solid @primdark3;
+	color: @primdark3;
+	background: fade(@prim1,30%);
     }
 
     h1 {

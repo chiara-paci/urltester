@@ -53,6 +53,10 @@ base colors
 table {
   border-collapse: collapse;
 }
+code,
+pre {
+  margin: 2em;
+}
 .center {
   text-align: center;
 }
@@ -230,6 +234,13 @@ ul {
   display: inline-block;
   vertical-align: top;
   line-height: 150%;
+}
+#main code,
+#main pre {
+  padding: 1em;
+  border: 1px solid #16044f;
+  color: #16044f;
+  background: rgba(197, 183, 241, 0.3);
 }
 #main h1 {
   margin-top: 1em;
