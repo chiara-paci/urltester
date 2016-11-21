@@ -63,12 +63,13 @@ class AssertCollectionMixin(object):
     test_proxy_host=""
     test_proxy_port=""
 
-
     def get_settings(self,**kwargs):
         kwargs["paths"]=self.test_set
         if self.test_proxy_host:
             kwargs["proxy_host"]=self.test_proxy_host
             kwargs["proxy_port"]=self.test_proxy_port
+        print
+        print kwargs
         settings=urltester.config.Settings(**kwargs)
         return settings
 
@@ -90,14 +91,18 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
         self.assertHasAttribute(test_response,"msg")
         self.assertIsString(test_response.msg)
 
+    def _print_response(self,testname,test_response):
+        print "%15.15s %5.2f %5d %s" % (testname,test_response.time,test_response.status,test_response.msg)
+        
+
     def test_execution(self):
         settings=self.get_settings()
         for testname in settings.url_defs.keys():
-            tester=urltester.tester.Tester(testname,settings.url_defs[testname].url,
-                                           settings.url_defs[testname].timeout)
+            tester=urltester.tester.tester_factory(settings,testname)
             test_response=tester.execute()
             self._check_test_response(test_response)
-            print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+            self._print_response(testname,test_response)
+            #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
 
     def test_manager_sequential(self):
         settings=self.get_settings()
@@ -109,7 +114,8 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
             self.assertIn(testname,response_dict.keys())
             test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
-            print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+            self._print_response(testname,test_response)
+            #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
 
     def test_manager_threaded(self):
         settings=self.get_settings()
@@ -121,7 +127,8 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
             self.assertIn(testname,response_dict.keys())
             test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
-            print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+            #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+            self._print_response(testname,test_response)
             test_ok=response_dict[testname]["ok"]
             test_desc=response_dict[testname]["definition"]
             self.assertEqual(test_desc,settings.url_defs[testname])

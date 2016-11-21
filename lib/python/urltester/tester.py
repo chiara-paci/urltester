@@ -62,13 +62,22 @@ class TestResponse(object):
             self.errno=exception.args[0]
             return
         if isinstance(exception,socket.error):
-            self.msg="Socket error: %s" % (exception.args[1])
+            if type(exception.errno)==int:
+                self.errno=exception.errno
+            elif len(exception.args)==2:
+                self.errno=exception.args[0]
+            self.msg="Socket Error (unknown)"
+            if exception.strerror:
+                self.msg="Socket Error: %s" % (exception.strerror)
+            elif exception.message:
+                self.msg="Socket Error: %s" % (exception.message)
+            elif len(exception.args)==2:
+                self.msg="Socket Error: %s" % (exception.args[1])
             if parent:
                 self.status=-6
                 self.msg+=" "+unicode(type(parent))
             else:
                 self.status=-7
-            self.errno=exception.args[0]
             return
         self.status=-100
         self.msg="(%s) %s" % (unicode(type(exception)),unicode(exception))
@@ -119,17 +128,19 @@ class TestResponseCollection(collections.OrderedDict):
         self._ok_dict[testname]=self[testname]["ok"]
 
 class Tester(object):
-    def __init__(self,test_name,url,timeout,
+    def __init__(self,settings,test_name,url,timeout,
                  ssl_check_certificate=True,no_ssl_v2=False,no_ssl_v3=False,
                  ssl_client_key="",ssl_client_cert=""):
+        self.settings=settings
         self.test_name=test_name
-        self.url=url
-        self.timeout=timeout
-        self.ssl_check_certificate=ssl_check_certificate
-        self.no_ssl_v2=no_ssl_v2
-        self.no_ssl_v3=no_ssl_v3
-        self.ssl_client_key=ssl_client_key
-        self.ssl_client_cert=ssl_client_cert
+
+        self.url=settings.url_defs[test_name].url
+        self.timeout=settings.url_defs[test_name].timeout
+        self.ssl_check_certificate=settings.url_defs[test_name].ssl_check_certificate
+        self.no_ssl_v2=settings.url_defs[test_name].no_ssl_v2
+        self.no_ssl_v3=settings.url_defs[test_name].no_ssl_v3
+        self.ssl_client_key=settings.url_defs[test_name].ssl_client_key
+        self.ssl_client_cert=settings.url_defs[test_name].ssl_client_cert
 
     def execute(self):
         response=TestResponse()
@@ -139,6 +150,8 @@ class Tester(object):
             gcontext.verify_mode=ssl.CERT_REQUIRED
             gcontext.load_default_certs()
             gcontext.check_hostname=True
+        else:
+            gcontext.verify_mode=ssl.CERT_NONE
         if self.no_ssl_v2:
             gcontext.options |= ssl.OP_NO_SSLv2
         if self.no_ssl_v3:
@@ -149,10 +162,17 @@ class Tester(object):
             else:
                 gcontext.load_cert_chain(self.ssl_client_cert)
 
+        handlers=[urllib2.HTTPSHandler(context=gcontext)]
+        if self.settings.proxy_host:
+            proxy=self.settings.proxy_host+":"+unicode(self.settings.proxy_port)
+            proxy_handler = urllib2.ProxyHandler({'http': proxy,'https': proxy})
+            handlers.append(proxy_handler)
+        opener=urllib2.build_opener(*handlers)
+
         t0=time.time()
 
         try:
-            f=urllib2.urlopen(self.url,timeout=self.timeout,context=gcontext)
+            f=opener.open(self.url,timeout=self.timeout)
             data=f.read()
             response.status=f.code
             f.close()
@@ -167,28 +187,14 @@ class Tester(object):
 
         return response
 
-def urllib2_setup(settings):
-    handlers=[]
-    if settings.proxy_host:
-        proxy="http://"+settings.proxy_host+"/"+unicode(settings.proxy_port)+"/"
-        proxy_handler = urllib2.ProxyHandler({'http': proxy,'https': proxy})
-        handlers.append(proxy_handler)
-
-    if handlers:
-        opener = urllib2.build_opener(*handlers)
-        urllib2.install_opener(opener)
-    else:
-        opener = urllib2.build_opener()
-        urllib2.install_opener(opener)
-
-def tester_factory(testname,url_defs):
-    tester=Tester(testname,url_defs[testname].url,
-                  url_defs[testname].timeout,
-                  ssl_check_certificate=url_defs[testname].ssl_check_certificate,
-                  ssl_client_key=url_defs[testname].ssl_client_key,
-                  ssl_client_cert=url_defs[testname].ssl_client_cert,
-                  no_ssl_v2=url_defs[testname].no_ssl_v2,
-                  no_ssl_v3=url_defs[testname].no_ssl_v3)
+def tester_factory(settings,testname):
+    tester=Tester(settings,testname,settings.url_defs[testname].url,
+                  settings.url_defs[testname].timeout,
+                  ssl_check_certificate=settings.url_defs[testname].ssl_check_certificate,
+                  ssl_client_key=settings.url_defs[testname].ssl_client_key,
+                  ssl_client_cert=settings.url_defs[testname].ssl_client_cert,
+                  no_ssl_v2=settings.url_defs[testname].no_ssl_v2,
+                  no_ssl_v3=settings.url_defs[testname].no_ssl_v3)
     return tester
 
 class TestManager(object):
@@ -196,28 +202,21 @@ class TestManager(object):
         self.settings=settings
 
     def run_sequential(self):
-        urllib2_setup(self.settings)
         t0=time.time()
-        #ret=collections.OrderedDict()
         ret=TestResponseCollection(self.settings)
-        print "Sequential"
         for testname in self.settings.url_defs.keys():
-            print testname
-            tester=tester_factory(testname,self.settings.url_defs)
+            tester=tester_factory(self.settings,testname)
             test_response=tester.execute()
             ret.add_response(testname,test_response)
         t1=time.time()
         return t1-t0,ret
 
     def run_threaded(self):
-        urllib2_setup(self.settings)
         t0=time.time()
         ret=TestResponseCollection(self.settings)
-        print "Threaded"
         thread_dict={}
         for testname in self.settings.url_defs.keys():
-            print testname
-            tester=tester_factory(testname,self.settings.url_defs)
+            tester=tester_factory(self.settings,testname)
             thread_dict[testname]=TestThread(tester)
             thread_dict[testname].start()
         terminated=False

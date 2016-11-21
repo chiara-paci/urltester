@@ -191,8 +191,7 @@ class TestPage(ActionPage):
         context["settings"]= self.settings
         context["test_name"]= self.test_name
         context["test_description"]= self.settings.url_defs[self.test_name]
-        tester.urllib2_setup(self.settings)
-        tester_obj=tester.tester_factory(self.test_name,self.settings.url_defs)
+        tester_obj=tester.tester_factory(self.settings,self.test_name)
         test_response=tester_obj.execute()
         context["test_response"]=test_response
         context["test_status"]=self.settings.url_defs[self.test_name].check_status(test_response.status)
