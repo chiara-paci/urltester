@@ -242,7 +242,7 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
 
     def test_config_other(self):
         test_data=[]
-        paths=["/home/chiara/urltester/tests/real_test.conf"]
+        paths=[PARENT_DIR+"/tests/real_test.conf"]
         for path in paths:
             if not (os.path.isfile(path) and os.access(path, os.R_OK)):
                 continue

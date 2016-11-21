@@ -59,18 +59,24 @@ class AssertCollectionMixin(object):
         if type(obj) in [dict]: return
         self.fail(msg)
 
-    test_set=["/home/chiara/urltester/tests/real_test.conf"]
+    test_set=[PARENT_DIR+"/tests/real_test.conf"]
+    test_proxy_host=""
+    test_proxy_port=""
+
 
     def get_settings(self,**kwargs):
         kwargs["paths"]=self.test_set
+        if self.test_proxy_host:
+            kwargs["proxy_host"]=self.test_proxy_host
+            kwargs["proxy_port"]=self.test_proxy_port
         settings=urltester.config.Settings(**kwargs)
         return settings
 
 class TesterTest(unittest.TestCase,AssertCollectionMixin):
 
-    test_set=["/home/chiara/urltester/tests/real_test_errori_ssl.conf",
-              "/home/chiara/urltester/tests/real_test_errori_socket.conf",
-              "/home/chiara/urltester/tests/real_test_corretti.conf"]
+    test_set=[PARENT_DIR+"/tests/real_test_errori_ssl.conf",
+              PARENT_DIR+"/tests/real_test_errori_socket.conf",
+              PARENT_DIR+"/tests/real_test_corretti.conf"]
 
     def _check_test_response(self,test_response):
         self.assertIsInstance(test_response,urltester.tester.TestResponse)
@@ -122,16 +128,16 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
             self.assertEqual(test_ok,settings.url_defs[testname].check_status(test_response.status))
             
 class SSLTesterTest(TesterTest):
-    test_set=["/home/chiara/urltester/tests/real_test_errori_ssl.conf"]
+    test_set=[PARENT_DIR+"/tests/real_test_errori_ssl.conf"]
     
 class SocketTesterTest(TesterTest):
-    test_set=["/home/chiara/urltester/tests/real_test_errori_socket.conf"]
+    test_set=[PARENT_DIR+"/tests/real_test_errori_socket.conf"]
     
 class OkTesterTest(TesterTest):
-    test_set=["/home/chiara/urltester/tests/real_test_corretti.conf"]
+    test_set=[PARENT_DIR+"/tests/real_test_corretti.conf"]
     
 class DefaultTesterTest(TesterTest):
-    test_set=["/home/chiara/urltester/etc/urltester.conf"]
+    test_set=[PARENT_DIR+"/etc/urltester.conf"]
         
 if __name__ == '__main__':  
     unittest.main()
