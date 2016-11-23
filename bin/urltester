@@ -46,6 +46,9 @@ class RunServer(Run):
         tester.run_server()
 
 
+formatter=logging.Formatter(fmt='%(asctime)s %(message)s', datefmt=None)
+logging.basicConfig(format='%(asctime)s %(message)s')
+
 # Set up a specific logger with our desired output level
 info_logger = logging.getLogger('UrlTester Logger')
 info_logger.setLevel(logging.DEBUG)
@@ -53,6 +56,7 @@ info_logger.setLevel(logging.DEBUG)
 # Add the log message handler to the logger
 info_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_INFO, 
                                                     maxBytes=2048, backupCount=50)
+info_handler.setFormatter(formatter)
 info_logger.addHandler(info_handler)
 
 error_logger = logging.getLogger('UrlTester Error')
@@ -61,6 +65,7 @@ error_logger.setLevel(logging.DEBUG)
 # Add the log message handler to the logger
 error_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_ERROR, 
                                                     maxBytes=2048, backupCount=50)
+error_handler.setFormatter(formatter)
 error_logger.addHandler(error_handler)
 
 parser = argparse.ArgumentParser(description="UrlTester Server")
