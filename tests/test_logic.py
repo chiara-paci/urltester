@@ -107,7 +107,6 @@ class AssertCollectionMixin(object):
             "SERVER_PROTOCOL": random.choice(["http","https"])
         }
         return environ
-        
 
 class StartResponseFactory(object):
     def __init__(self,cls,environ,status,response_headers):
@@ -148,7 +147,6 @@ class FunctionTest(unittest.TestCase,AssertCollectionMixin):
         self._check_is_page(server,"/docs",urltester.server.DocsPage)
         self._check_is_page(server,"/docs/",urltester.server.DocsPage)
 
-
         for testurl in settings.url_defs.keys():
             self._check_is_page(server,"/"+testurl,urltester.server.TestPage)
             self._check_is_page(server,"/"+testurl+"/",urltester.server.TestPage)
@@ -159,6 +157,91 @@ class FunctionTest(unittest.TestCase,AssertCollectionMixin):
             while testurl in [ "environ","config","docs" ]+settings.url_defs.keys(): testurl=random_string(L)
             self._check_is_page(server,"/"+testurl,urltester.server.Error404Page)
             self._check_is_page(server,"/"+testurl+"/",urltester.server.Error404Page)
+
+class StaticTest(unittest.TestCase,AssertCollectionMixin):
+    def _check_is_page(self,server,path,page_class):
+        page=server.path_map(path)
+        self.assertIsInstance(page,page_class)
+        res=page.get({})
+        H=dict(res.headers)
+        self.assertIn("Content-Type",H.keys())
+
+        print path,H
+        
+        for ext,mime in [ 
+                ("css","text/css"),
+                ("png", "image/png"),
+                ("woff",  "application/font-woff"),
+                ("woff2", "application/x-font-woff2"),
+                ("ttf",   "application/x-font-truetype"),
+                ("eot",   "application/vnd.ms-fontobject"),
+                ("otf",   "application/x-font-opentype"),
+                ("svg",   "image/svg+xml") ]:
+            if path.endswith(ext):
+                self.assertEqual(H["Content-Type"],mime)
+
+    def get_server_bc(self):
+        base_context="/"
+        base_path=[]
+        for n in range(0,random.choice(range(1,5))):
+            base_path.append(random_string(random.choice(range(1,20))))
+        base_context="/"+"/".join(base_path)
+        settings=urltester.config.Settings(base_context=base_context)
+        server=urltester.server.UrlTester(settings)
+        return server,settings,base_context
+
+    def test_path_map(self):
+        server,settings,base_context=self.get_server_bc()
+        self.assertHasAttribute(server,"path_map")
+        self._check_is_page(server,base_context+"/static/img/logo.png",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/css/urltester.css",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/css/font-awesome.min-4.6.3.css",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/fontawesome-webfont.woff",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/fontawesome-webfont.woff2",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/FontAwesome.otf",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/fontawesome-webfont.svg",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/fontawesome-webfont.eot",urltester.server.StaticPage)
+        self._check_is_page(server,base_context+"/static/fonts/fontawesome-webfont.ttf",urltester.server.StaticPage)
+
+class BaseContextTest(unittest.TestCase,AssertCollectionMixin):
+    def _check_is_page(self,server,path,page_class):
+        page=server.path_map(path)
+        self.assertIsInstance(page,page_class)
+
+    def get_server_bc(self):
+        base_context="/"
+        base_path=[]
+        for n in range(0,random.choice(range(1,5))):
+            base_path.append(random_string(random.choice(range(1,20))))
+        base_context="/"+"/".join(base_path)
+        settings=urltester.config.Settings(base_context=base_context)
+        server=urltester.server.UrlTester(settings)
+        return server,settings,base_context
+
+    def test_path_map(self):
+        server,settings,base_context=self.get_server_bc()
+        self.assertHasAttribute(server,"path_map")
+        #self._check_is_page(server,base_context+"",urltester.server.HomePage)
+        #self._check_is_page(server,base_context+"/",urltester.server.HomePage)
+        self._check_is_page(server,base_context+"/config",urltester.server.ConfigPage)
+        self._check_is_page(server,base_context+"/config/",urltester.server.ConfigPage)
+        self._check_is_page(server,base_context+"/environ",urltester.server.EnvironPage)
+        self._check_is_page(server,base_context+"/environ/",urltester.server.EnvironPage)
+        self._check_is_page(server,base_context+"/docs",urltester.server.DocsPage)
+        self._check_is_page(server,base_context+"/docs/",urltester.server.DocsPage)
+
+        # for testurl in settings.url_defs.keys():
+        #     self._check_is_page(server,base_context+"/"+testurl,urltester.server.TestPage)
+        #     self._check_is_page(server,base_context+"/"+testurl+"/",urltester.server.TestPage)
+
+        for iteration in range(0,10):
+            L=random.choice(range(1,50))
+            testurl=random_string(L)
+            while testurl in [ "environ","config","docs" ]+settings.url_defs.keys(): testurl=random_string(L)
+            self._check_is_page(server,"/"+testurl,urltester.server.Error404Page)
+            self._check_is_page(server,"/"+testurl+"/",urltester.server.Error404Page)
+            self._check_is_page(server,base_context+"/"+testurl,urltester.server.Error404Page)
+            self._check_is_page(server,base_context+"/"+testurl+"/",urltester.server.Error404Page)
 
 class GenerationTest(unittest.TestCase,AssertCollectionMixin):
     base_dir=urltester.config.BASE_DIR
@@ -265,6 +348,8 @@ class GenerationTest(unittest.TestCase,AssertCollectionMixin):
                                  "description": "chiave per autenticazione del client"} ),
             ( "ssl_client_cert", {"type": "str","mandatory": False,"default": "",
                                   "description": "certificato per autenticazione del client"} ),
+            ( "ssl_cipher", {"type": "str","mandatory": False,"default": "",
+                             "description": "tipi di crittografia ammessi (in formato openssl)"} ),
         ] )
 
         response_template=self._test_template_rendering(server,environ,"docs","docs",context)

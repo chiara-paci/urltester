@@ -36,7 +36,7 @@ class TestResponse(object):
         if isinstance(exception,urllib2.URLError):
             if type(exception.reason) in [str,unicode]:
                 self.status=-1
-                self.msg=exception.reason
+                self.msg=config.to_unicode(exception.reason)
                 return
             return self.add_error(exception.reason,parent=exception)
         if isinstance(exception,ssl.SSLError):
@@ -119,7 +119,7 @@ class TestResponseCollection(collections.OrderedDict):
 
     @property
     def some_ok(self):
-        some_ok=reduce(lambda x,y: x or y,self._ok_dict.values(),True)
+        some_ok=reduce(lambda x,y: x or y,self._ok_dict.values(),False)
         return some_ok
 
     def add_response(self,testname,response):
@@ -128,9 +128,7 @@ class TestResponseCollection(collections.OrderedDict):
         self._ok_dict[testname]=self[testname]["ok"]
 
 class Tester(object):
-    def __init__(self,settings,test_name,url,timeout,
-                 ssl_check_certificate=True,no_ssl_v2=False,no_ssl_v3=False,
-                 ssl_client_key="",ssl_client_cert=""):
+    def __init__(self,settings,test_name):
         self.settings=settings
         self.test_name=test_name
 
@@ -141,6 +139,7 @@ class Tester(object):
         self.no_ssl_v3=settings.url_defs[test_name].no_ssl_v3
         self.ssl_client_key=settings.url_defs[test_name].ssl_client_key
         self.ssl_client_cert=settings.url_defs[test_name].ssl_client_cert
+        self.ssl_cipher=settings.url_defs[test_name].ssl_cipher
 
     def execute(self):
         response=TestResponse()
@@ -161,6 +160,8 @@ class Tester(object):
                 gcontext.load_cert_chain(self.ssl_client_cert,keyfile=self.ssl_client_key)
             else:
                 gcontext.load_cert_chain(self.ssl_client_cert)
+        if self.ssl_cipher:
+            gcontext.set_ciphers(self.ssl_cipher)
 
         handlers=[urllib2.HTTPSHandler(context=gcontext)]
         if self.settings.proxy_host:
@@ -178,6 +179,7 @@ class Tester(object):
             f.close()
         except urllib2.HTTPError, e:
             response.status=e.code
+            response.msg=config.to_unicode(e.reason)
         except Exception, e:
             response.add_error(e)
 
@@ -188,13 +190,7 @@ class Tester(object):
         return response
 
 def tester_factory(settings,testname):
-    tester=Tester(settings,testname,settings.url_defs[testname].url,
-                  settings.url_defs[testname].timeout,
-                  ssl_check_certificate=settings.url_defs[testname].ssl_check_certificate,
-                  ssl_client_key=settings.url_defs[testname].ssl_client_key,
-                  ssl_client_cert=settings.url_defs[testname].ssl_client_cert,
-                  no_ssl_v2=settings.url_defs[testname].no_ssl_v2,
-                  no_ssl_v3=settings.url_defs[testname].no_ssl_v3)
+    tester=Tester(settings,testname)
     return tester
 
 class TestManager(object):

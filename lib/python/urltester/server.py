@@ -6,18 +6,23 @@ import random
 import jinja2
 import collections
 import inspect
+import mimetypes
 
 import config
 import tester
 
 class Response(object):
-    def __init__(self):
+    def __init__(self,content_type='text/html; charset=utf-8'):
         self.body=u""
         self.headers = [
-            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Content-Type', content_type),
             ('Content-Length', str(len(self.body)))
         ]
         self.status="200 OK"
+
+    @property
+    def body_iterable(self):
+        return [self.body]
 
     def finalize_headers(self):
         new_headers=[]
@@ -26,6 +31,34 @@ class Response(object):
                 new_headers.append( (k,val) )
             new_headers.append( ('Content-Length', str(len(self.body))) )
         self.headers=new_headers
+
+class StaticResponse(object):
+    def __init__(self,file_path):
+        self.file_path=file_path
+        mimetypes.add_type('application/x-font-woff2',".woff2")
+        mimetypes.add_type('application/x-font-opentype',".otf")
+        mimetypes.add_type('application/x-font-truetype',".ttf")
+
+        c_type,c_enc=mimetypes.guess_type(self.file_path)
+        self.headers = [
+            ('Content-Type', c_type),
+        ]
+        self.status="200 OK"
+
+    @property
+    def body_iterable(self):
+        fd=open(self.file_path,"r")
+        return wsgiref.util.FileWrapper(fd)
+
+class StaticPage(object):
+    def __init__(self,obj_path,settings):
+        self.obj_path=obj_path
+        self.settings=settings
+
+    def get(self,environ):
+        file_path=self.settings.static_dir+self.obj_path
+        response=StaticResponse(file_path)
+        return response
 
 class TemplatePage(object):
     template_name=config.TEMPLATE_NAMES["test"]
@@ -44,10 +77,16 @@ class TemplatePage(object):
 
     def get(self,environ):
         response=Response()
+        
+        #for k,val in environ.items():
+        #    print k,val
+
+        prefix=environ["SCRIPT_NAME"]+self.settings.base_context
+
         context={
             "title": self.get_title(),
-            "base_url": environ["SCRIPT_NAME"],
-            "static_url": environ["SCRIPT_NAME"]+"/"+config.STATIC_REL_PATH
+            "base_url": prefix,
+            "static_url": prefix+"/"+config.STATIC_REL_PATH
         }
         status,context=self.elab(context,environ)
         response.body = self.apply_template(self.template_name,context)
@@ -118,8 +157,9 @@ class DocsPage(TemplatePage):
                                  "description": "chiave per autenticazione del client"} ),
             ( "ssl_client_cert", {"type": "str","mandatory": False,"default": "",
                                   "description": "certificato per autenticazione del client"} ),
+            ( "ssl_cipher", {"type": "str","mandatory": False,"default": "",
+                             "description": "tipi di crittografia ammessi (in formato openssl)"} ),
         ] )
-
         
 
         return "200 OK",context
@@ -234,9 +274,14 @@ class UrlTester(object):
         
         httpd.serve_forever()
 
-    def path_map(self,path):
+    def path_map(self,full_path):
         test_list=map(lambda x: "/"+x, self.settings.url_defs.keys() )
         test_list+=map(lambda x: "/"+x+"/", self.settings.url_defs.keys() )
+
+        if not full_path.startswith(self.settings.base_context):
+            return Error404Page(full_path,self.settings)
+            
+        path=full_path[len(self.settings.base_context):]
 
         if path in ["","/"]:
             return HomePage(self.settings)
@@ -249,6 +294,9 @@ class UrlTester(object):
         if path in test_list:
             test_name=path.replace("/","")
             return TestPage(test_name,self.settings)
+        if path.startswith("/"+config.STATIC_REL_PATH):
+            obj_path=path[len(config.STATIC_REL_PATH)+1:]
+            return StaticPage(obj_path,self.settings)
         return Error404Page(path,self.settings)
 
     ####################################
@@ -257,6 +305,6 @@ class UrlTester(object):
         page=self.path_map(environ["PATH_INFO"])
         response=page.get(environ)
         start_response(response.status, response.headers)
-        return [response.body]
+        return response.body_iterable
 
 

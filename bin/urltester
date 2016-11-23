@@ -26,6 +26,7 @@ for label,metavar,default,helpmsg in [
         ("proxy_host","HOSTNAME",fake_settings.proxy_host,"Proxy hostname"),
         ("proxy_user","USERNAME",fake_settings.proxy_user,"Proxy user"),
         ("proxy_password","PASSWORD",fake_settings.proxy_password,"Proxy password"),
+        ("base_context","PATH",fake_settings.base_context,"Base context"),
 ]:
     parser.add_argument("--"+label, action="store",dest=label,metavar=metavar,
                         help="%s (default: %s)" % (helpmsg,default) )
@@ -45,7 +46,7 @@ args=parser.parse_args(sys.argv[1:])
 settings_kwargs={}
 for k in ["http_host","http_port",
           "paths","title",
-          "template_dir",
+          "template_dir","base_context",
           "proxy_host","proxy_port","proxy_user","proxy_password"]:
     param=getattr(args,k,None)
     if param==None: continue

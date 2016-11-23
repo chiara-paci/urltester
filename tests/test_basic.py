@@ -35,9 +35,15 @@ class AssertCollectionMixin(object):
         if type(obj) in [str,unicode]: return
         self.fail(msg)
 
+    def assertIsBoolean(self,obj,msg=None):
+        if not msg:
+            msg="%s is not boolean (type: %s)" % (unicode(obj),type(obj))
+        if type(obj) in [bool]: return
+        self.fail(msg)
+
     def assertIsList(self,obj,msg=None):
         if not msg:
-            msg="%s is not string (type: %s)" % (unicode(obj),type(obj))
+            msg="%s is not list (type: %s)" % (unicode(obj),type(obj))
         if type(obj) in [list]: return
         self.fail(msg)
 
@@ -53,6 +59,9 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
     default_proxy_user=u""
     default_proxy_password=u""
     default_template_dir=base_dir+u"/etc/templates"
+    default_base_context=u""
+    default_serve_static=False
+    default_static_dir=base_dir+u"/static"
 
     def setUp(self):  
         pass
@@ -61,7 +70,9 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         pass
 
     def _test_settings_base(self,settings,http_host,http_port,paths,title,template_dir,
-                            proxy_host,proxy_port,proxy_user,proxy_password):
+                            proxy_host,proxy_port,proxy_user,proxy_password,base_context,
+                            serve_static,static_dir):
+
         self.assertEqual(title,unicode(settings))
 
         self.assertHasAttribute(settings,"paths")
@@ -98,6 +109,10 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         self.assertIsString(settings.template_dir)
         self.assertEqual(settings.template_dir,template_dir)
 
+        self.assertHasAttribute(settings,"static_dir")
+        self.assertIsString(settings.static_dir)
+        self.assertEqual(settings.static_dir,static_dir)
+
         self.assertHasAttribute(settings,"title")
         self.assertIsString(settings.title)
         self.assertEqual(settings.title,title)
@@ -105,13 +120,43 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         self.assertHasAttribute(settings,"url_defs")
         self.assertIsInstance(settings.url_defs,collections.OrderedDict)
 
+        self.assertHasAttribute(settings,"base_context")
+        self.assertIsString(settings.base_context)
+        self.assertEqual(settings.base_context,base_context)
+
+        self.assertHasAttribute(settings,"serve_static")
+        self.assertIsBoolean(settings.serve_static)
+        self.assertEqual(settings.serve_static,serve_static)
+
+    
+
     def test_load_settings(self):
+        
+        def get_args(args,k="",val=""):
+            ret=args.copy()
+            if k:
+                ret[k]=val
+            return ret.values()
 
         settings=urltester.config.Settings()
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
+
+        base_args=collections.OrderedDict([
+            ("http_host",self.default_http_host),
+            ("http_port",self.default_http_port),
+            ("paths",self.default_paths),
+            ("title",self.default_title),
+            ("template_dir",self.default_template_dir),
+            ("proxy_host",self.default_proxy_host),
+            ("proxy_port",self.default_proxy_port),
+            ("proxy_user",self.default_proxy_user),
+            ("proxy_password",self.default_proxy_password),
+            ("base_context",self.default_base_context),
+            ("serve_static",self.default_serve_static),
+            ("static_dir", self.default_static_dir)
+        ])
+        
+        args=get_args(base_args)
+        self._test_settings_base(settings,*args)
 
         with self.assertRaises(urltester.config.SettingsException):
             urltester.config.Settings(paths={ u"ciao": "ciao" })
@@ -125,59 +170,27 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         with self.assertRaises(urltester.config.SettingsException):
             urltester.config.Settings(template_dir=[ u"ciao" ])
 
-        settings=urltester.config.Settings(http_host=u"")
-        self._test_settings_base(settings,u"",self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
-        
-        settings=urltester.config.Settings(http_port=12345)
-        self._test_settings_base(settings,self.default_http_host,12345,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
-        
-        settings=urltester.config.Settings(title=u"Nuovo titolo")
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,u"Nuovo titolo",self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
-        
-        settings=urltester.config.Settings(paths=[ "/ciao" ])
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 ["/ciao"],self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
+        with self.assertRaises(urltester.config.SettingsException):
+            urltester.config.Settings(static_dir=[ u"ciao" ])
 
-        settings=urltester.config.Settings(template_dir="/ciao")
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,"/ciao",
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
-
-        settings=urltester.config.Settings(proxy_host=u"ciao")
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 u"ciao",self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
-        
-        settings=urltester.config.Settings(proxy_port=12345)
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,12345,
-                                 self.default_proxy_user,self.default_proxy_password)
-
-        settings=urltester.config.Settings(proxy_user=u"pippo")
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 u"pippo",self.default_proxy_password)
-
-        settings=urltester.config.Settings(proxy_password=u"ciao")
-        self._test_settings_base(settings,self.default_http_host,self.default_http_port,
-                                 self.default_paths,self.default_title,self.default_template_dir,
-                                 self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,u"ciao")
+        for k,val in [ 
+                ("http_host",u""),
+                ("http_port",12345),
+                ("title",u"Nuovo titolo"),
+                ("paths",[ "/ciao" ]),
+                ("template_dir",u"/ciao"),
+                ("static_dir",u"/ciao"),
+                ("proxy_host",u"ciao"),
+                ("proxy_port",12345),
+                ("proxy_user",u"pippo"),
+                ("proxy_password",u"ciao"),
+                ("base_context",u"/ciao/uyte"),
+                ("serve_static",True),
+        ]:
+            kwargs={ k:val }
+            settings=urltester.config.Settings(**kwargs)
+            args=get_args(base_args,k,val)
+            self._test_settings_base(settings,*args)
 
     def test_config_reading(self):
         test_data=[]
@@ -262,7 +275,9 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
         self._test_settings_base(settings,self.default_http_host,self.default_http_port,
                                  paths,self.default_title,self.default_template_dir,
                                  self.default_proxy_host,self.default_proxy_port,
-                                 self.default_proxy_user,self.default_proxy_password)
+                                 self.default_proxy_user,self.default_proxy_password,
+                                 self.default_base_context,
+                                 self.default_serve_static,self.default_static_dir)
         
         self.assertEquals(keys,settings.url_defs.keys())
 
@@ -277,7 +292,8 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
             self.assertEquals(tdict[u"title"],settings.url_defs[k].title)
             self.assertEquals(tdict[u"affects"],settings.url_defs[k].affects)
             self.assertEquals(tdict[u"timeout"],settings.url_defs[k].timeout)
-            for attr in [ u"no_ssl_v2",u"no_ssl_v3",u"ssl_check_certificate",u"ssl_client_key",u"ssl_client_cert"]:
+            for attr in [ u"no_ssl_v2",u"no_ssl_v3",u"ssl_check_certificate",
+                          u"ssl_client_key",u"ssl_client_cert",u"ssl_cipher"]:
                 self.assertHasAttribute(settings.url_defs[k],attr)
                 val=settings.url_defs[k].__getattribute__(attr)
                 if attr in tdict.keys():
@@ -285,7 +301,7 @@ class ConfigTest(unittest.TestCase,AssertCollectionMixin):
                     continue
                 if attr=="ssl_check_certificate":
                     self.assertEquals(True,val)
-                elif attr in [ u"ssl_client_key",u"ssl_client_cert" ]:
+                elif attr in [ u"ssl_client_key",u"ssl_client_cert",u"ssl_cipher" ]:
                     self.assertEquals("",val)
                 else:
                     self.assertEquals(False,val)

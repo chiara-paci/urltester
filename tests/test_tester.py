@@ -68,8 +68,10 @@ class AssertCollectionMixin(object):
         if self.test_proxy_host:
             kwargs["proxy_host"]=self.test_proxy_host
             kwargs["proxy_port"]=self.test_proxy_port
+
+        for k,val in kwargs.items():
+            print " %15.15s %s" % (k,val)
         print
-        print kwargs
         settings=urltester.config.Settings(**kwargs)
         return settings
 
@@ -91,48 +93,64 @@ class TesterTest(unittest.TestCase,AssertCollectionMixin):
         self.assertHasAttribute(test_response,"msg")
         self.assertIsString(test_response.msg)
 
-    def _print_response(self,testname,test_response):
-        print "%15.15s %5.2f %5d %s" % (testname,test_response.time,test_response.status,test_response.msg)
-        
+    def _print_response(self,testname,test_response,ok):
+        ok="ok" if ok else "no"
+        print "%s %15.15s %5.2f %5d %s" % (ok,testname,test_response.time,test_response.status,test_response.msg)
 
     def test_execution(self):
+        print 
+        print "================================================="
         settings=self.get_settings()
         for testname in settings.url_defs.keys():
             tester=urltester.tester.tester_factory(settings,testname)
             test_response=tester.execute()
             self._check_test_response(test_response)
-            self._print_response(testname,test_response)
+            ok=settings.url_defs[testname].check_status(test_response.status)
+            self._print_response(testname,test_response,ok)
             #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
 
     def test_manager_sequential(self):
+        print 
+        print "================================================="
+        print "Sequential:"
         settings=self.get_settings()
         manager=urltester.tester.TestManager(settings)
         exec_time,response_dict=manager.run_sequential()
-        print "Sequential:",exec_time
         self.assertIsInstance(response_dict,collections.OrderedDict)
         for testname in settings.url_defs.keys():
             self.assertIn(testname,response_dict.keys())
             test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
-            self._print_response(testname,test_response)
+            self._print_response(testname,test_response,response_dict[testname]["ok"])
             #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
+        print
+        print "ok=%s, all_ok=%s, some_ok=%s" % (response_dict.ok,response_dict.all_ok,
+                                                response_dict.some_ok)
+        print "%s (%2.2f sec.)" % (response_dict.msg,exec_time)
 
     def test_manager_threaded(self):
+        print 
+        print "================================================="
+        print "Threaded:"
         settings=self.get_settings()
         manager=urltester.tester.TestManager(settings)
         exec_time,response_dict=manager.run_threaded()
-        print "Threaded:",exec_time
         self.assertIsInstance(response_dict,collections.OrderedDict)
         for testname in settings.url_defs.keys():
             self.assertIn(testname,response_dict.keys())
             test_response=response_dict[testname]["response"]
             self._check_test_response(test_response)
             #print testname,test_response.status,test_response.time,test_response.msg,test_response.errno
-            self._print_response(testname,test_response)
             test_ok=response_dict[testname]["ok"]
             test_desc=response_dict[testname]["definition"]
             self.assertEqual(test_desc,settings.url_defs[testname])
             self.assertEqual(test_ok,settings.url_defs[testname].check_status(test_response.status))
+            self._print_response(testname,test_response,response_dict[testname]["ok"])
+
+        print
+        print "ok=%s, all_ok=%s, some_ok=%s" % (response_dict.ok,response_dict.all_ok,
+                                                response_dict.some_ok)
+        print "%s (%2.2f sec.)" % (response_dict.msg,exec_time)
             
 class SSLTesterTest(TesterTest):
     test_set=[PARENT_DIR+"/tests/real_test_errori_ssl.conf"]

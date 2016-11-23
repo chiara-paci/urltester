@@ -147,6 +147,7 @@ class TestDescription(object):
         self.no_ssl_v2=False
         self.no_ssl_v3=False
         self.ssl_check_certificate=True
+        self.ssl_cipher=u""
         self.ssl_client_key=""
         self.ssl_client_cert=""
         if "no_ssl_v2" in tdict.keys():
@@ -159,6 +160,8 @@ class TestDescription(object):
             self.ssl_client_key=tdict["ssl_client_key"]
         if "ssl_client_cert" in tdict.keys():
             self.ssl_client_cert=tdict["ssl_client_cert"]
+        if "ssl_cipher" in tdict.keys():
+            self.ssl_cipher=tdict["ssl_cipher"]
 
     def show_config(self,prefix=u"    "):
         print prefix+self.title
@@ -171,7 +174,8 @@ class Settings(object):
     def __init__(self,http_host=u"localhost",http_port=9876,
                  paths=[ BASE_DIR+u"/etc/urltester.conf" ],title=u"UrlTester",
                  template_dir=BASE_DIR+u"/etc/templates",
-                 proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u""): 
+                 proxy_host=u"",proxy_port=3128,proxy_user=u"",proxy_password=u"",
+                 base_context=u"",static_dir=BASE_DIR+u"/static",serve_static=False): 
         self.version=VERSION
 
         if type(paths) in [list,tuple]:
@@ -186,6 +190,8 @@ class Settings(object):
         self.proxy_host=to_unicode(proxy_host)
         self.proxy_user=to_unicode(proxy_user)
         self.proxy_password=to_unicode(proxy_password)
+        self.base_context=to_unicode(base_context)
+        self.serve_static=serve_static
 
         try:
             self.http_port=int(http_port)
@@ -200,7 +206,11 @@ class Settings(object):
         if type(template_dir) not in [str,unicode,int]:
             raise SettingsException("template_dir","unicode",template_dir)
             
+        if type(static_dir) not in [str,unicode,int]:
+            raise SettingsException("static_dir","unicode",static_dir)
+            
         self.template_dir=to_unicode(template_dir)
+        self.static_dir=to_unicode(static_dir)
         self.url_defs=collections.OrderedDict()
 
         self.load()
