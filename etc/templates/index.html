@@ -59,7 +59,7 @@
     <td class="center">{{ obj.definition.timeout }}</td>
     <td class="center">{{ obj.definition.check_status }}</td>
     
-    <td class="center">{{ obj.response.status }}</td>
+    <td class="center">{{ obj["response"].status }}</td>
     <td class="right">{{ "%2.2f" |format(obj.response.time) }}</td>
     <td>{{ obj.response.msg }}</td>
     <th class="center statuscell">

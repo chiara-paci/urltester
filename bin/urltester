@@ -3,6 +3,9 @@
 import argparse
 import sys
 import os
+import daemonocle
+import logging
+import logging.handlers
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(BASE_DIR)
@@ -12,59 +15,111 @@ sys.path.append(PARENT_DIR+"/lib/python")
 import urltester.config
 import urltester.server
 
+class Run(object):
+    def __init__(self,args): 
+        settings_kwargs={}
+        for k in ["http_host","http_port",
+                  "paths","title",
+                  "template_dir","base_context","serve_static","static_dir",
+                  "proxy_host","proxy_port","proxy_user","proxy_password"]:
+            param=getattr(args,k,None)
+            if param==None: continue
+            settings_kwargs[k]=param
+
+        self.settings=urltester.config.Settings(**settings_kwargs)
+
+    def __call__(self): pass
+
+class RunConfig(Run):
+    def __call__(self):
+        self.settings.show_config()
+        sys.exit(0)
+
+class RunDemo(Run):
+    def __call__(self):
+        tester=urltester.server.UrlTester(self.settings)
+        tester.run_demo()
+    
+class RunServer(Run):
+    def __call__(self):
+        tester=urltester.server.UrlTester(self.settings)
+        tester.run_server()
+
+
+# Set up a specific logger with our desired output level
+info_logger = logging.getLogger('UrlTester Logger')
+info_logger.setLevel(logging.DEBUG)
+
+# Add the log message handler to the logger
+info_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_INFO, 
+                                                    maxBytes=2048, backupCount=50)
+info_logger.addHandler(info_handler)
+
+error_logger = logging.getLogger('UrlTester Error')
+error_logger.setLevel(logging.DEBUG)
+
+# Add the log message handler to the logger
+error_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_ERROR, 
+                                                    maxBytes=2048, backupCount=50)
+error_logger.addHandler(error_handler)
+
 parser = argparse.ArgumentParser(description="UrlTester Server")
 parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
-parser.add_argument("-S","--server", action="store_true", help="Run as server",dest="run_server")
-parser.add_argument("-D","--demo", action="store_true", help="Run demo",dest="run_demo")
-parser.add_argument("-C","--show_config", action="store_true", help="Show config",dest="show_config")
+
+base_group=parser.add_argument_group(title="Base Configuration")
+bind_group=parser.add_argument_group(title="HTTP Server Configuration")
+proxy_group=parser.add_argument_group(title="Proxy")
+run_group=parser.add_mutually_exclusive_group()
+
 fake_settings=urltester.config.Settings()
-
-for label,metavar,default,helpmsg in [ 
-        ("http_host","HOSTNAME",fake_settings.http_host,"Bind host"),
-        ("title","TITLE",fake_settings.title,"Server name"),
-        ("template_dir","DIR",fake_settings.template_dir,"Template directory"),
-        ("static_dir","DIR",fake_settings.static_dir,"Static file directory"),
-        ("proxy_host","HOSTNAME",fake_settings.proxy_host,"Proxy hostname"),
-        ("proxy_user","USERNAME",fake_settings.proxy_user,"Proxy user"),
-        ("proxy_password","PASSWORD",fake_settings.proxy_password,"Proxy password"),
-        ("base_context","PATH",fake_settings.base_context,"Base context"),
+for label,metavar,default,helpmsg,group in [ 
+        ("http_host","HOSTNAME",fake_settings.http_host,"Bind host",bind_group),
+        ("title","TITLE",fake_settings.title,"Server name",base_group),
+        ("template_dir","DIR",fake_settings.template_dir,"Template directory",base_group),
+        ("static_dir","DIR",fake_settings.static_dir,"Static file directory",base_group),
+        ("proxy_host","HOSTNAME",fake_settings.proxy_host,"Proxy hostname",proxy_group),
+        #("proxy_user","USERNAME",fake_settings.proxy_user,"Proxy user",proxy_group),
+        #("proxy_password","PASSWORD",fake_settings.proxy_password,"Proxy password",proxy_group),
+        ("base_context","PATH",fake_settings.base_context,"Base context",bind_group),
 ]:
-    parser.add_argument("--"+label, action="store",dest=label,metavar=metavar,
+    group.add_argument("--"+label, action="store",dest=label,metavar=metavar,
+                       help="%s (default: %s)" % (helpmsg,default) )
+
+bind_group.add_argument("--serve_static", action="store_true", help="Serve static files",dest="serve_static")
+
+for label,metavar,default,helpmsg,group in [ 
+        ("http_port","PORT",fake_settings.http_port,"Bind port",bind_group),
+        ("proxy_port","PORT",fake_settings.proxy_port,"Proxy port",proxy_group),
+]:
+    group.add_argument("--"+label, action="store",dest=label,metavar=metavar,type=int,
                         help="%s (default: %s)" % (helpmsg,default) )
 
-parser.add_argument("--serve_static", action="store_true", help="Serve static files",dest="serve_static")
-
-for label,metavar,default,helpmsg in [ 
-        ("http_port","PORT",fake_settings.http_port,"Bind port"),
-        ("proxy_port","PORT",fake_settings.proxy_port,"Proxy port"),
-]:
-    parser.add_argument("--"+label, action="store",dest=label,metavar=metavar,type=int,
-                        help="%s (default: %s)" % (helpmsg,default) )
-
-parser.add_argument("--config", action="append",dest="paths",metavar="FILE",
+base_group.add_argument("--config", action="append",dest="paths",metavar="FILE",
                     help="Config file (default: %s)" % fake_settings.paths )
 
+run_group.add_argument("-S","--server", action="store_true", help="Run as server",dest="run_server")
+run_group.add_argument("-D","--demo", action="store_true", help="Run demo",dest="run_demo")
+run_group.add_argument("-C","--show_config", action="store_true", help="Show config",dest="show_config")
+
+parser.add_argument("-a","--action",action="store",help="Action",dest="action",default="nodetach",
+                    choices=["nodetach"]+daemonocle.Daemon.list_actions())
+    
 args=parser.parse_args(sys.argv[1:])
 
-settings_kwargs={}
-for k in ["http_host","http_port",
-          "paths","title",
-          "template_dir","base_context","serve_static","static_dir",
-          "proxy_host","proxy_port","proxy_user","proxy_password"]:
-    param=getattr(args,k,None)
-    if param==None: continue
-    settings_kwargs[k]=param
-
-settings=urltester.config.Settings(**settings_kwargs)
-urltester=urltester.server.UrlTester(settings)
-
-if args.show_config:
-    settings.show_config()
-    sys.exit(0)
-
-if args.run_demo:
-    urltester.run_demo()
-
-if args.run_server:
-    urltester.run_server()
+if __name__ == "__main__":
+    if args.run_demo:
+        run=RunDemo(args)
+    elif args.run_server:
+        run=RunServer(args)
+    else:
+        run=RunConfig(args)
+        run()
+        sys.exit(0)
+    #run()
+    if args.action=="nodetach":
+        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,detach=False)
+        daemon.do_action("start")
+    else:
+        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run)
+        daemon.do_action(args.action)
 

@@ -12,6 +12,9 @@ BASE_DIR=u"/home/chiara/urltester"
 STATIC_REL_PATH = "static"
 
 VERSION_FILE=BASE_DIR+"/VERSION"
+PID_FILE=BASE_DIR+"/var/run/urltester.pid"
+LOG_FILE_INFO=BASE_DIR+"/var/log/urltester_access.log"
+LOG_FILE_ERROR=BASE_DIR+"/var/log/urltester_error.log"
 
 TEMPLATE_NAMES = {
     "config": "config.html",
@@ -20,6 +23,7 @@ TEMPLATE_NAMES = {
     "homepage": "index.html",
     "test": "test.html",
     "404": "404.html",
+    "500": "500.html",
 }
 
 MESSAGES = {
@@ -71,8 +75,14 @@ class CheckStatus(object):
     def __init__(self,status_ok_defs):
         self.status_ok_defs=self._is_ok(status_ok_defs)
 
+    def __unicode__(self):
+        if type(self.status_ok_defs) in [ str,unicode,int ]:
+            return to_unicode(self.status_ok_defs)
+        S=", ".join(map(to_unicode,self.status_ok_defs))
+        return S
+
     def __str__(self):
-        return self.status_ok_defs
+        return self.__unicode__()
     
     def _is_ok(self,status_ok_defs):
         if type(status_ok_defs)==int: return status_ok_defs

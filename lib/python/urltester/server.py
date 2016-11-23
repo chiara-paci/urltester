@@ -8,6 +8,8 @@ import collections
 import inspect
 import mimetypes
 
+import logging
+
 import config
 import tester
 
@@ -77,10 +79,6 @@ class TemplatePage(object):
 
     def get(self,environ):
         response=Response()
-        
-        #for k,val in environ.items():
-        #    print k,val
-
         prefix=environ["SCRIPT_NAME"]+self.settings.base_context
 
         context={
@@ -191,6 +189,17 @@ class Error404Page(TemplatePage):
         context["path"]=self.path
         return "404 Not Found",context
 
+class Error500Page(TemplatePage):
+    template_name=config.TEMPLATE_NAMES["500"]
+
+    def __init__(self,exception,settings):
+        self.exception=exception
+        TemplatePage.__init__(self,settings)
+
+    def elab(self,context,environ):
+        context["error"]=unicode(self.exception)
+        return "500 Internal Server Error",context
+
 class ActionPage(TemplatePage):
     def __init__(self,settings): 
         TemplatePage.__init__(self,settings)
@@ -246,33 +255,50 @@ class HomePage(ActionPage):
         test_time,res_collection=test_manager.run_threaded()
         context["test_time"]=test_time
         context["res_collection"]=res_collection
+
+        for testname,obj in res_collection.items():
+            print testname,type(obj["response"].msg),obj["response"].msg
+
         return "200 OK",context
+
+class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
+
+    def log_message(self,msg_format,*args):
+        my_logger = logging.getLogger('UrlTester Logger')
+        my_logger.info(msg_format % args)
+
 
 class UrlTester(object):
     def __init__(self,settings):
         self.settings=settings
-        self.ut_id=random.choice(range(0,100000))
-        print "urltester id:",self.ut_id
 
     def run_demo(self):
+        self._run_http_server(wsgiref.simple_server.demo_app)
+
+    def _run_http_server(self,application):
+        # Instantiate the server
+        def log_exception_decorator(func,settings):
+            def decorated(environ,start_response):
+                try:
+                    return func(environ,start_response)
+                except Exception, e:
+                    my_logger = logging.getLogger('UrlTester Error')
+                    my_logger.exception(e)
+                    page=Error500Page(e,settings)
+                    response=page.get(environ)
+                    start_response(response.status, response.headers)
+                    return response.body_iterable
+            return decorated
         httpd = wsgiref.simple_server.make_server (
             self.settings.http_host,
             self.settings.http_port,
-            wsgiref.simple_server.demo_app
+            log_exception_decorator(application,self.settings),
+            handler_class=RequestHandler
         )
-        
-        # Wait for a single request, serve it and quit
         httpd.serve_forever()
 
     def run_server(self):
-        # Instantiate the server
-        httpd = wsgiref.simple_server.make_server (
-            self.settings.http_host,
-            self.settings.http_port,
-            self.application
-        )
-        
-        httpd.serve_forever()
+        self._run_http_server(self.application)
 
     def path_map(self,full_path):
         test_list=map(lambda x: "/"+x, self.settings.url_defs.keys() )
