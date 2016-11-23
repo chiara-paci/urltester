@@ -251,6 +251,14 @@ ul {
   padding-top: .7em;
   padding-bottom: .7em;
 }
+#main h2 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-size: 120%;
+  color: #16044f;
+  padding-top: .7em;
+  padding-bottom: .7em;
+}
 #main .status {
   font-size: 300%;
   padding: 1em;
@@ -270,6 +278,15 @@ ul {
 #main .backyellow {
   color: #ffffff;
   background: #e9c725;
+}
+#main ul.toc {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 1em;
+}
+#main ul.toc li.toc2 {
+  margin-left: 1em;
 }
 #main #content {
   text-align: justify;

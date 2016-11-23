@@ -1,16 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Configurazione dell'installazione</h1>
+<ul class="toc">
+  <li class="toc1"><a name="#install">1. Configurazione dell'installazione</a></li>
+  <li class="toc1"><a href="#wsgi">2. Configurazione come WSGI</a>
+  <li class="toc2"><a href="#wsgiut">2.1. Configurazione di UrlTester</a></li>
+  <li class="toc2"><a href="#wsgiapache">2.2. Configurazione di Apache HTTP Server</a></li>
+  <li class="toc1"><a href="#standalone">3. Configurazione come server standalone</a></li>
+  <li class="toc1"><a href="#proxy">4. Configurazione come server con un reverse proxy</a>
+  <li class="toc2"><a href="#proxyut">4.1. Configurazione di UrlTester</a></li>
+  <li class="toc2"><a href="#proxyapache">4.2. Configurazione di Apache HTTP Server</a></li>
+  <li class="toc1"><a href="#test">5. Configurazione dei test</a></li>
+</ul>
+
+<a name="install"></a>
+<h1>1. Configurazione dell'installazione</h1>
 
 <p>Bisogna editare il file <tt>lib/python/urltester/config.py</tt>, in
 particolare BASE_DIR deve corrispondere al path di installazione di
 UrlTester.</p>
 
-<a name="confwsgi"></a>
-<h1>Configurazione di WSGI</h1>
+<a name="wsgi"></a>
+<h1>2. Configurazione come WSGI</h1>
 
-<p>In wsgi/urltester.wsgi è necessario passare i parametri di configurazione all'oggetto Settings:</p>
+<a name="wsgiut"></a>
+<h2>2.1. Configurazione di UrlTester</h2>
+
+<p>In <tt>wsgi/urltester.wsgi</tt> è necessario passare i parametri di configurazione all'oggetto Settings:</p>
 
 <pre>
 ...
@@ -43,7 +59,96 @@ settings=urltester.config.Settings(param1=val1, param2=val2, ...)
 
 </table>
 
-<h1>Configurazione dei test</h1>
+<a name="wsgiapache"></a>
+<h2>2.2. Configurazione di Apache HTTP Server</h2>
+
+<p>La parte statica e il modulo  wsgi devono essere configurati con lo
+stesso prefisso (<tt>/urltester</tt> nell'esempio):</p>
+
+<pre>
+LoadModule wsgi_module path_di_mod_wsgi
+
+Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
+
+<Directory /usr/local/urltester/UrlTester/static/>
+     #Require all granted
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+</Directory>
+
+WSGIScriptAlias /urltester /usr/local/urltester/UrlTester/wsgi/urltester.wsgi
+ 
+<Directory /usr/local/urltester/UrlTester/wsgi>
+    #Require all granted
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+
+</pre>
+
+<p>Path di mod_wsgi è ad esempio: /usr/local/urltester/software/lib/python2.7/site-packages/mod_wsgi/server/mod_wsgi-py27.so.</p>
+
+<a name="standalone"></a>
+<h1>3. Configurazione come server standalone</h1>
+
+<p>È sufficiente avviare <tt>urltester</tt> in modalità server, specificando che deve servire anche la parte statica:</p>
+
+<pre>
+$ bin/urltester --server --serve_static
+</pre>
+
+<p>Vedere l'help per l'elenco completo delle opzioni:</p>
+
+<pre>
+$ bin/urltester --help
+</pre>
+
+<a name="proxy"></a>
+<h1>4. Configurazione come server con un reverse proxy</h1>
+
+<a name="proxyut"></a>
+<h2>4.1. Configurazione di UrlTester</h2>
+
+
+<p>Bisogna  far partire  UrlTester  come server,  indicando lo  stesso
+context  previsto lato  reverse proxy  (/urltester nell'esempio)  come
+base_context.</p>
+
+<pre>
+$ bin/urltester --server --base_context="/urltester"
+</pre>
+
+<p>È possibile far servire la parte statica a UrlTester (con l'opzione
+--serve_static), anche se è preferibile che sia il reverse proxy a
+farlo direttamente.</p>
+
+<a name="proxyapache"></a>
+<h2>4.2. Configurazione di Apache HTTP Server</h2>
+
+<p>Per servire la parte statica (deve precedere il resto):</p>
+
+<pre>
+Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
+
+<Directory /usr/local/urltester/UrlTester/static/>
+     #Require all granted
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+</Directory>
+</pre>
+
+<p>Configurazione del reverse proxy:</p>
+
+<pre>
+ProxyPass "/urltester" "http://127.0.0.1:9876/urltester"
+ProxyPassReverse "/urltester" "http://127.0.0.1:9876/urltester"
+</pre>
+
+<a name="test"></a>
+<h1>5. Configurazione dei test</h1>
 
 <p>I test sono descritti nei file di configurazione del
 parametro <i>path</i> della <a href="#conwsgi">configurazione di

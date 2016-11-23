@@ -294,6 +294,10 @@ class UrlTester(object):
         if path in test_list:
             test_name=path.replace("/","")
             return TestPage(test_name,self.settings)
+        
+        if not self.settings.serve_static: 
+            return Error404Page(path,self.settings)
+
         if path.startswith("/"+config.STATIC_REL_PATH):
             obj_path=path[len(config.STATIC_REL_PATH)+1:]
             return StaticPage(obj_path,self.settings)
