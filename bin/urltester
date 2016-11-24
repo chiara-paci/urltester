@@ -127,24 +127,24 @@ run_group.add_argument("-C","--show_config", action="store_true", help="Show con
 ## Base configuration
 base_group=parser.add_argument_group(title="Base Configuration")
 base_group.add_argument("--title",action="store",dest="title",metavar="TITLE",
-                        help="Server name (default: %s)" % fake_settings.title)
+                        help="Server name (default: %s)." % fake_settings.title)
 base_group.add_argument("--template_dir",action="store",dest="template_dir",metavar="DIR",
-                        help="Template directory (default: %s)" % fake_settings.template_dir)
+                        help="Template directory (default: %s)." % fake_settings.template_dir)
 base_group.add_argument("--static_dir",action="store",dest="static_dir",metavar="DIR",
-                        help="Static file directory (default: %s)" % fake_settings.static_dir)
+                        help="Static file directory (default: %s)." % fake_settings.static_dir)
 base_group.add_argument("--config", action="append",dest="paths",metavar="FILE",
-                        help="Config file(s), iterable (default: [%s])" % ", ".join(fake_settings.paths) )
+                        help="Config file(s). You can repeat --config option to specify multiple config files (default: [%s])." % ", ".join(fake_settings.paths) )
 
 ## HTTP Server
 bind_group=parser.add_argument_group(title="HTTP Server Configuration")
 bind_group.add_argument("--http_host",action="store",dest="http_host",metavar="HOSTNAME",
-                        help="Bind host (default: %s)" % fake_settings.http_host)
+                        help="Bind IP (default: %s)." % fake_settings.http_host)
 bind_group.add_argument("--http_port",action="store",dest="http_port",metavar="PORT",type=int,
-                        help="Bind port (default: %d)" % fake_settings.http_port)
+                        help="Bind port (default: %d)." % fake_settings.http_port)
 bind_group.add_argument("--base_context",action="store",dest="base_context",metavar="PATH",
-                        help="Base context (default: empty)")
+                        help="Base context (default: empty).")
 bind_group.add_argument("--serve_static", action="store_true", 
-                        help="Serve static files (default: no)",dest="serve_static")
+                        help="Serve static files (default: no).",dest="serve_static")
 
 ## Proxy
 proxy_group=parser.add_argument_group(title="Proxy Configuration")
@@ -158,9 +158,9 @@ proxy_group.add_argument("--proxy_port",action="store",dest="proxy_port",metavar
 daemon_group=parser.add_argument_group(title="Daemon Configuration")
 
 daemon_group.add_argument("--user", action="store",dest="user",metavar="USER",default=None,
-                          help="User (default: current user)" )
+                          help="User (default: current user)." )
 daemon_group.add_argument("--group", action="store",dest="group",metavar="GROUP",default=None,
-                          help="Group (default: current group or user default group)" )
+                          help="Group (default: current group or user default group)." )
 
 def octal(string):
     try:
@@ -170,13 +170,13 @@ def octal(string):
     return value
 
 daemon_group.add_argument("--umask", action="store",dest="umask",metavar="UMASK",default=None,type=octal,
-                          help="Umask as octal number (default:0220)" )
+                          help="Umask as octal number (default:0220)." )
 ## Log
 log_group=parser.add_argument_group(title="Log Configuration")
 log_group.add_argument("--log_num_files",action="store",dest="log_num_files",metavar="NUM",type=int,
-                       default=2,help="Number of log file to keep (default: 2)")
+                       default=2,help="Number of log file to keep (default: 2).")
 log_group.add_argument("--log_rotation",action="store",dest="log_rotation",
-                       default="size",help="Type of log rotation (default: size)",
+                       default="size",help="Type of log rotation (default: size). When type=size, the log file is rotated at a predeterminated size (--log_size). When type=interval, the log file is rotated at timed intervals (--log_interval). When type=midnight, the log file is rotated every day at midnight. Otherwise the log file is rotated at a weekday.",
                        choices=["size","interval","midnight","monday","tuesday","wednesday","thursday",
                                 "friday","saturday","sunday"])
 
@@ -225,10 +225,10 @@ def human_bytes(human):
     return sz
 
 log_group.add_argument("--log_size",action="store",dest="log_size",metavar="BYTES",
-                       default="10240",help="Rotation size (default: 20 Mb). Used only when log_rotation=size.",
+                       default="10240",help="Rotation size in bytes (default: 20 Mb). Used only when log_rotation=size. You can use suffix k, m, g, t or p (case insensitive).",
                        type=human_bytes)
 log_group.add_argument("--log_interval",action="store",dest="log_interval",metavar="STEP",
-                       default="7d",help="Rotation interval (default: 7 days). Used only when log_rotation=interval.",
+                       default="7d",help="Rotation interval (default: 7days). Used only when log_rotation=interval. You have to use a suffix between days/day/d, hours/hour/h, minutes/minute/m or seconds/second/s (case insensitive).",
                        type=human_interval)
     
 args=parser.parse_args(sys.argv[1:])
