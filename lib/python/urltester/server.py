@@ -264,7 +264,7 @@ class HomePage(ActionPage):
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
     def log_message(self,msg_format,*args):
-        my_logger = logging.getLogger('UrlTester Logger')
+        my_logger = logging.getLogger(config.LOG_LABEL_INFO)
         my_logger.info(msg_format % args)
 
 
@@ -282,7 +282,7 @@ class UrlTester(object):
                 try:
                     return func(environ,start_response)
                 except Exception, e:
-                    my_logger = logging.getLogger('UrlTester Error')
+                    my_logger = logging.getLogger(config.LOG_LABEL_ERROR)
                     my_logger.exception(e)
                     page=Error500Page(e,settings)
                     response=page.get(environ)

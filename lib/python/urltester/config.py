@@ -13,8 +13,6 @@ STATIC_REL_PATH = "static"
 
 VERSION_FILE=BASE_DIR+"/VERSION"
 PID_FILE=BASE_DIR+"/var/run/urltester.pid"
-LOG_FILE_INFO=BASE_DIR+"/var/log/urltester_access.log"
-LOG_FILE_ERROR=BASE_DIR+"/var/log/urltester_error.log"
 
 TEMPLATE_NAMES = {
     "config": "config.html",
@@ -32,6 +30,16 @@ MESSAGES = {
     "ko": u"Contattare SICUREZZA"
 }
 
+LOG_FILE_INFO=BASE_DIR+"/var/log/urltester_access.log"
+LOG_FILE_ERROR=BASE_DIR+"/var/log/urltester_error.log"
+
+LOG_LABEL_INFO="UrlTester Logger"
+LOG_LABEL_ERROR="UrlTester Error"
+
+LOG_FILE_MAP = [
+    (LOG_LABEL_INFO, LOG_FILE_INFO),
+    (LOG_LABEL_ERROR, LOG_FILE_ERROR),
+]
 
 ##########################
 ## stop editing

@@ -45,28 +45,12 @@ class RunServer(Run):
         tester=urltester.server.UrlTester(self.settings)
         tester.run_server()
 
-
-formatter=logging.Formatter(fmt='%(asctime)s %(message)s', datefmt=None)
-logging.basicConfig(format='%(asctime)s %(message)s')
-
-# Set up a specific logger with our desired output level
-info_logger = logging.getLogger('UrlTester Logger')
-info_logger.setLevel(logging.DEBUG)
-
-# Add the log message handler to the logger
-info_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_INFO, 
-                                                    maxBytes=2048, backupCount=50)
-info_handler.setFormatter(formatter)
-info_logger.addHandler(info_handler)
-
-error_logger = logging.getLogger('UrlTester Error')
-error_logger.setLevel(logging.DEBUG)
-
-# Add the log message handler to the logger
-error_handler = logging.handlers.RotatingFileHandler(urltester.config.LOG_FILE_ERROR, 
-                                                    maxBytes=2048, backupCount=50)
-error_handler.setFormatter(formatter)
-error_logger.addHandler(error_handler)
+def shutdown_cb(message,code):
+    msg="UrlTester shutdown: (%d) %s" % (message,code)
+    my_logger = logging.getLogger(urltester.config.LOG_LABEL_INFO)
+    my_logger.info(msg)
+    my_logger = logging.getLogger(urltester.config.LOG_LABEL_ERROR)
+    my_logger.info(msg)
 
 parser = argparse.ArgumentParser(description="UrlTester Server")
 parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
@@ -112,6 +96,24 @@ parser.add_argument("-a","--action",action="store",help="Action",dest="action",d
 args=parser.parse_args(sys.argv[1:])
 
 if __name__ == "__main__":
+
+    formatter=logging.Formatter(fmt='%(asctime)s %(message)s', datefmt=None)
+
+    for label,fname in urltester.config.LOG_FILE_MAP:
+        handler = logging.handlers.RotatingFileHandler(fname,maxBytes=20480, backupCount=50)
+        logger = logging.getLogger(label)
+        logger.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    ## verficare di essere in start
+    msg="UrlTester startup (version %s)" % urltester.config.VERSION
+    my_logger = logging.getLogger(urltester.config.LOG_LABEL_INFO)
+    my_logger.info(msg)
+    my_logger = logging.getLogger(urltester.config.LOG_LABEL_ERROR)
+    my_logger.info(msg)
+
+
     if args.run_demo:
         run=RunDemo(args)
     elif args.run_server:
@@ -122,9 +124,9 @@ if __name__ == "__main__":
         sys.exit(0)
     #run()
     if args.action=="nodetach":
-        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,detach=False)
+        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,detach=False,shutdown_callback=shutdown_cb)
         daemon.do_action("start")
     else:
-        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run)
+        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,shutdown_callback=shutdown_cb)
         daemon.do_action(args.action)
 
