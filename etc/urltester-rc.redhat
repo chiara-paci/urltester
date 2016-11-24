@@ -21,15 +21,21 @@ URLTESTER_HOME=$URLTESTER_BASE/UrlTester
 # URLTESTER_LOCK=/var/lock/subsys/urltester
 URLTESTER_LOCK=""
 
+URLTESTER_USER=""
+URLTESTER_GROUP=""
 BASE_CONTEXT=/urltester
 
-export PATH=$SOFTWARE_BASE/bin:$PATH
-export LD_LIBRARY_PATH=$SOFTWARE_BASE/lib:$LD_LIBRARY_PATH
+LOG_NUM=2
+
+LOG_ROTATION="size"
+LOG_SIZE=10m
+LOG_INTERVAL=""
 
 PROXY_HOST='192.168.155.42'
 PROXY_PORT='8000'
 
-#<define any local shell functions used by the code that follows>
+export PATH=$SOFTWARE_BASE/bin:$PATH
+export LD_LIBRARY_PATH=$SOFTWARE_BASE/lib:$LD_LIBRARY_PATH
 
 settings=""
 
@@ -45,6 +51,41 @@ then
     then
 	settings="$settings --proxy_port=$PROXY_PORT"
     fi
+fi
+
+if [ "$URLTESTER_USER" ]
+then
+    settings="$settings --user=$URLTESTER_USER"
+fi
+
+if [ "$URLTESTER_GROUP" ]
+then
+    settings="$settings --group=$URLTESTER_GROUP"
+fi
+
+if [ "$LOG_NUM" ]
+then
+    settings="$settings --log_num_files=$LOG_NUM"
+fi
+
+if [ "$LOG_ROTATION" ]
+then
+    settings="$settings --log_rotation=$LOG_ROTATION"
+
+    case "$LOG_ROTATION" in
+	size)
+	    if [ "$LOG_SIZE" ]
+	    then
+		settings="$settings --log_size=$LOG_SIZE"
+	    fi
+	    ;;
+	interval)
+	    if [ "$LOG_INTERVAL" ]
+	    then
+		settings="$settings --log_interval=$LOG_INTERVAL"
+	    fi
+	    ;;
+    esac
 fi
 
 start() {
@@ -71,7 +112,7 @@ stop() {
 
 restart() {
     echo -n "Restarting urltester: "
-    $URLTESTER_HOME/bin/urltester  $settings --server --action=restart
+    $URLTESTER_HOME/bin/urltester $settings --server --action=restart
     ret=$?
     if [ "$URLTESTER_LOCK" ]
     then
@@ -91,8 +132,11 @@ showconfig() {
 action="$1"
 
 case "$1" in
-    start|stop|status|restart|reload|condrestart|showconfig)
+    start|stop|status|showconfig)
 	$action
+	;;
+    restart|reload|condrestart)
+	restart
 	;;
     *)
 	echo "Usage: urltester {start|stop|status|reload|restart|condrestart|showconfig}"
