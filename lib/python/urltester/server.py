@@ -264,7 +264,7 @@ class HomePage(ActionPage):
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
     def log_message(self,msg_format,*args):
-        my_logger = logging.getLogger(config.LOG_LABEL_INFO)
+        my_logger = logging.getLogger(config.LOG_LABEL_ACCESS)
         my_logger.info(msg_format % args)
 
 

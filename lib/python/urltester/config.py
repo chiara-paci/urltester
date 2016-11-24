@@ -30,14 +30,14 @@ MESSAGES = {
     "ko": u"Contattare SICUREZZA"
 }
 
-LOG_FILE_INFO=BASE_DIR+"/var/log/urltester_access.log"
+LOG_FILE_ACCESS=BASE_DIR+"/var/log/urltester_access.log"
 LOG_FILE_ERROR=BASE_DIR+"/var/log/urltester_error.log"
 
-LOG_LABEL_INFO="UrlTester Logger"
+LOG_LABEL_ACCESS="UrlTester Logger"
 LOG_LABEL_ERROR="UrlTester Error"
 
 LOG_FILE_MAP = [
-    (LOG_LABEL_INFO, LOG_FILE_INFO),
+    (LOG_LABEL_ACCESS, LOG_FILE_ACCESS),
     (LOG_LABEL_ERROR, LOG_FILE_ERROR),
 ]
 

@@ -6,6 +6,7 @@ import os
 import daemonocle
 import logging
 import logging.handlers
+import pwd,grp
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(BASE_DIR)
@@ -28,6 +29,12 @@ class Run(object):
 
         self.settings=urltester.config.Settings(**settings_kwargs)
 
+    def _log(self,msg):
+        my_logger = logging.getLogger(urltester.config.LOG_LABEL_ACCESS)
+        my_logger.info(msg)
+        my_logger = logging.getLogger(urltester.config.LOG_LABEL_ERROR)
+        my_logger.info(msg)
+
     def __call__(self): pass
 
 class RunConfig(Run):
@@ -35,56 +42,75 @@ class RunConfig(Run):
         self.settings.show_config()
         sys.exit(0)
 
-class RunDemo(Run):
-    def __call__(self):
-        tester=urltester.server.UrlTester(self.settings)
-        tester.run_demo()
-    
 class RunServer(Run):
-    def __call__(self):
+    msg_startup_format="UrlTester v. %s startup"
+    msg_shutdown_format="UrlTester v. %s shutdown: [%d] %s"
+
+    def _action(self):
         tester=urltester.server.UrlTester(self.settings)
         tester.run_server()
 
-def shutdown_cb(message,code):
-    msg="UrlTester shutdown: (%d) %s" % (message,code)
-    my_logger = logging.getLogger(urltester.config.LOG_LABEL_INFO)
-    my_logger.info(msg)
-    my_logger = logging.getLogger(urltester.config.LOG_LABEL_ERROR)
-    my_logger.info(msg)
+    def __call__(self):
+        msg=self.msg_startup_format % urltester.config.VERSION
+        self._log(msg)
+        self._action()
+
+    def shutdown_cb(self,message,code):
+        msg=self.msg_shutdown_format % (urltester.config.VERSION,code,message)
+        self._log(msg)
+
+class RunDemo(RunServer):
+    msg_startup_format="UrlTester v. %s startup (demo)"
+    msg_shutdown_format="UrlTester v. %s shutdown: [%d] %s (demo)"
+
+    def _action(self):
+        tester=urltester.server.UrlTester(self.settings)
+        tester.run_demo()
 
 parser = argparse.ArgumentParser(description="UrlTester Server")
 parser.add_argument("-v","--version", action="version", version="UrlTester Server "+urltester.config.VERSION)
 
 base_group=parser.add_argument_group(title="Base Configuration")
 bind_group=parser.add_argument_group(title="HTTP Server Configuration")
-proxy_group=parser.add_argument_group(title="Proxy")
+proxy_group=parser.add_argument_group(title="Proxy Configuration")
+log_group=parser.add_argument_group(title="Log Configuration")
+daemon_group=parser.add_argument_group(title="Daemon Configuration")
 run_group=parser.add_mutually_exclusive_group()
 
 fake_settings=urltester.config.Settings()
-for label,metavar,default,helpmsg,group in [ 
-        ("http_host","HOSTNAME",fake_settings.http_host,"Bind host",bind_group),
-        ("title","TITLE",fake_settings.title,"Server name",base_group),
-        ("template_dir","DIR",fake_settings.template_dir,"Template directory",base_group),
-        ("static_dir","DIR",fake_settings.static_dir,"Static file directory",base_group),
-        ("proxy_host","HOSTNAME",fake_settings.proxy_host,"Proxy hostname",proxy_group),
-        #("proxy_user","USERNAME",fake_settings.proxy_user,"Proxy user",proxy_group),
-        #("proxy_password","PASSWORD",fake_settings.proxy_password,"Proxy password",proxy_group),
-        ("base_context","PATH",fake_settings.base_context,"Base context",bind_group),
-]:
-    group.add_argument("--"+label, action="store",dest=label,metavar=metavar,
-                       help="%s (default: %s)" % (helpmsg,default) )
 
+# for label,metavar,default,helpmsg,group in [ 
+#         ("http_host","HOSTNAME",fake_settings.http_host,"Bind host",bind_group),
+#         ("title","TITLE",fake_settings.title,"Server name",base_group),
+#         ("template_dir","DIR",fake_settings.template_dir,"Template directory",base_group),
+#         ("static_dir","DIR",fake_settings.static_dir,"Static file directory",base_group),
+#         ("proxy_host","HOSTNAME",fake_settings.proxy_host,"Proxy hostname",proxy_group),
+#         ("base_context","PATH",fake_settings.base_context,"Base context",bind_group),
+# ]:
+#     group.add_argument("--"+label, action="store",dest=label,metavar=metavar,
+#                        help="%s (default: %s)" % (helpmsg,default) )
+
+base_group.add_argument("--title",action="store",dest="title",metavar="TITLE",
+                        help="Server name (default: %s)" % fake_settings.title)
+base_group.add_argument("--template_dir",action="store",dest="template_dir",metavar="DIR",
+                        help="Template directory (default: %s)" % fake_settings.template_dir)
+base_group.add_argument("--static_dir",action="store",dest="static_dir",metavar="DIR",
+                        help="Static file directory (default: %s)" % fake_settings.static_dir)
+base_group.add_argument("--config", action="append",dest="paths",metavar="FILE",
+                        help="Config file (default: %s)" % fake_settings.paths )
+
+bind_group.add_argument("--http_host",action="store",dest="http_host",metavar="HOSTNAME",
+                        help="Bind host (default: %s)" % fake_settings.http_host)
+bind_group.add_argument("--http_port",action="store",dest="http_port",metavar="PORT",type=int,
+                        help="Bind port (default: %d)" % fake_settings.http_port)
+bind_group.add_argument("--base_context",action="store",dest="base_context",metavar="PATH",
+                        help="Base context (default: %s)" % fake_settings.base_context)
 bind_group.add_argument("--serve_static", action="store_true", help="Serve static files",dest="serve_static")
 
-for label,metavar,default,helpmsg,group in [ 
-        ("http_port","PORT",fake_settings.http_port,"Bind port",bind_group),
-        ("proxy_port","PORT",fake_settings.proxy_port,"Proxy port",proxy_group),
-]:
-    group.add_argument("--"+label, action="store",dest=label,metavar=metavar,type=int,
-                        help="%s (default: %s)" % (helpmsg,default) )
-
-base_group.add_argument("--config", action="append",dest="paths",metavar="FILE",
-                    help="Config file (default: %s)" % fake_settings.paths )
+proxy_group.add_argument("--proxy_host",action="store",dest="proxy_host",metavar="HOSTNAME",
+                         help="Proxy hostname (default: %s)" % fake_settings.proxy_host)
+proxy_group.add_argument("--proxy_port",action="store",dest="proxy_port",metavar="PORT",type=int,
+                         help="Proxy port (default: %d)" % fake_settings.proxy_port)
 
 run_group.add_argument("-S","--server", action="store_true", help="Run as server",dest="run_server")
 run_group.add_argument("-D","--demo", action="store_true", help="Run demo",dest="run_demo")
@@ -92,41 +118,164 @@ run_group.add_argument("-C","--show_config", action="store_true", help="Show con
 
 parser.add_argument("-a","--action",action="store",help="Action",dest="action",default="nodetach",
                     choices=["nodetach"]+daemonocle.Daemon.list_actions())
+
+daemon_group.add_argument("--user", action="store",dest="user",metavar="USER",default=None,
+                          help="User (default: current user)" )
+daemon_group.add_argument("--group", action="store",dest="group",metavar="GROUP",default=None,
+                          help="Group (default: current group or user default group)" )
+
+def octal(string):
+    try:
+        value = int(string,base=8)
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(e)
+    return value
+
+daemon_group.add_argument("--umask", action="store",dest="umask",metavar="UMASK",default=None,type=octal,
+                          help="Umask (octal number)" )
+
+log_group.add_argument("--log_num_files",action="store",dest="log_num_files",metavar="NUM",type=int,
+                       default=2,help="Number of log file to keep (default: 2)")
+log_group.add_argument("--log_rotation",action="store",dest="log_rotation",metavar="TYPE",
+                       default="size",help="Type of log rotation (default: size)",
+                       choices=["size","interval","midnight","monday","tuesday","wednesday","thursday",
+                                "friday","saturday","sunday"])
+
+def human_interval(human):
+    oldhuman=human
+    human=human.lower()
+    for k in ["days","day","hours","hour","minutes","minute","seconds","second"]:
+        if human.endswith(k):
+            human=human[:-len(k)].strip()
+            try:
+                return int(human),k[0]
+            except ValueError, e:
+                raise argparse.ArgumentTypeError(e)
+    when=human[-1]
+    if when not in ["d","m","s","h"]:
+        raise argparse.ArgumentTypeError("%s is not a valid interval" % oldhuman)
+    human=human[:-1].strip()
+    try:
+        return int(human),when
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(e)
+
+def human_bytes(human):
+    oldhuman=human
+    mult={
+        "b": 0,
+        "k": 1,
+        "m": 2,
+        "g": 3,
+        "t": 4,
+        "p": 5
+    }
+    human=human.lower()
+    if human.endswith("b"): human=human[:-1]
+    if human[-1] in ["k","m","g","p","t"]:
+        mult_id=human[-1]
+        human=human[:-1]
+    else:
+        mult_id="b"
+    human=human.strip()
+    try:
+        sz=int(human)
+        sz*=(1024**mult[mult_id])
+    except ValueError, e:
+        raise argparse.ArgumentTypeError(e)
+    return sz
+
+log_group.add_argument("--log_size",action="store",dest="log_size",metavar="BYTES",
+                       default="10240",help="Rotation size (default: 20 Mb)",type=human_bytes)
+log_group.add_argument("--log_interval",action="store",dest="log_interval",metavar="STEP",
+                       default="7d",help="Rotation interval (default: 7 days)",type=human_interval)
     
 args=parser.parse_args(sys.argv[1:])
+
+class LogFactory(object):
+    def __init__(self,args):
+        self.args=args
+
+    def build_handler(self,fname):
+        kwargs={
+            "backupCount": self.args.log_num_files
+        }
+        if self.args.log_rotation=="size":
+            kwargs["maxBytes"]=self.args.log_size
+            return logging.handlers.RotatingFileHandler(fname,**kwargs)
+        for (opt,when) in [ ("midnight","midnight"),
+                            ("monday","w0"),
+                            ("tuesday","w1"),
+                            ("wednesday","w2"),
+                            ("thursday","w3"),
+                            ("friday","w4"),
+                            ("saturday","w5"),
+                            ("sunday""w6") ]:
+            if self.args.log_rotation==opt:
+                kwargs["when"]=when
+                return logging.handlers.TimedRotatingFileHandler(fname,**kwargs)
+        kwargs["interval"],kwargs["when"]=self.args.log_interval
+        return logging.handlers.TimedRotatingFileHandler(fname,**kwargs)
+
+    def __call__(self,label,fname):
+        handler = self.build_handler(fname)
+        logger = logging.getLogger(label)
+        logger.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        return logger
+        
+log_factory=LogFactory(args)
 
 if __name__ == "__main__":
 
     formatter=logging.Formatter(fmt='%(asctime)s %(message)s', datefmt=None)
 
+    loggers=[]
+
     for label,fname in urltester.config.LOG_FILE_MAP:
-        handler = logging.handlers.RotatingFileHandler(fname,maxBytes=20480, backupCount=50)
-        logger = logging.getLogger(label)
-        logger.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-    ## verficare di essere in start
-    msg="UrlTester startup (version %s)" % urltester.config.VERSION
-    my_logger = logging.getLogger(urltester.config.LOG_LABEL_INFO)
-    my_logger.info(msg)
-    my_logger = logging.getLogger(urltester.config.LOG_LABEL_ERROR)
-    my_logger.info(msg)
-
+        logger=log_factory(label,fname)
 
     if args.run_demo:
         run=RunDemo(args)
+        for logger in loggers:
+            logger.info("UrlTester system: demo")
     elif args.run_server:
         run=RunServer(args)
+        for logger in loggers:
+            logger.info("UrlTester system: server")
     else:
         run=RunConfig(args)
         run()
         sys.exit(0)
-    #run()
+
+    for logger in loggers:
+        logger.info("UrlTester action: %s" % args.action)
+
+    daemon_args={
+        "pidfile": urltester.config.PID_FILE,
+        "worker": run,
+        "shutdown_callback": run.shutdown_cb,
+    }
+
     if args.action=="nodetach":
-        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,detach=False,shutdown_callback=shutdown_cb)
-        daemon.do_action("start")
+        action="start"
+        daemon_args["detach"]=False
     else:
-        daemon = daemonocle.Daemon(pidfile=urltester.config.PID_FILE,worker=run,shutdown_callback=shutdown_cb)
-        daemon.do_action(args.action)
+        action=args.action
+
+    if args.umask:
+        daemon_args["umask"]=int(args.umask)
+
+    if args.user:
+        pwdent=pwd.getpwnam(args.user)
+        daemon_args["uid"]=int(pwdent[2])
+        if not args.group:
+            daemon_args["gid"]=pwdent[3]
+        else:
+            grpent=grp.getgrnam(args.group)
+            daemon_args["gid"]=int(grpent[2])
+    
+    daemon = daemonocle.Daemon(**daemon_args)
+    daemon.do_action(action)
 

@@ -41,7 +41,7 @@ $ut_server --config a --config pippo --config pluto || assert_msg config
 $ut_server --show_config || assert_msg "show config"
 $ut_server --show_config --proxy_host="pippo" || assert_msg "show config"
 
-$ut_server --demo &
+$ut_server --demo --action start
 
 pid=$!
 sleep 2
@@ -50,31 +50,27 @@ ps -elf | grep $pid
 if ! netstat -an | grep "127.0.0.1:9876"
 then
     assert_msg "port default"
-    kill  $pid
+    $ut_server --demo --action stop
     exit 2
 fi
 
-kill  $pid
-
-echo "After: $pid"
-ps -elf | grep $pid
+$ut_server --demo --action stop
 
 http_port=12345
-$ut_server --demo --http_port=$http_port &
+$ut_server --demo --http_port=$http_port --action start 
 
 pid=$!
 sleep 2
 echo "Before: $pid (port: $http_port)"
-ps -elf | grep $pid
 
 if ! netstat -an | grep 127.0.0.1:$http_port
 then
     assert_msg "port 127.0.0.1:$http_port"
-    kill  $pid
+    $ut_server --demo --action stop
     exit 2
 fi
 
-kill  $pid
+$ut_server --demo --action stop
 
 echo "After: $pid"
 ps -elf | grep $pid
@@ -83,7 +79,7 @@ ps -elf | grep $pid
 http_port=12345
 http_host=0.0.0.0
 
-$ut_server --demo --http_port=$http_port --http_host=$http_host &
+$ut_server --demo --http_port=$http_port --http_host=$http_host --action start 
 
 pid=$!
 sleep 2
@@ -93,11 +89,11 @@ ps -elf | grep $pid
 if ! netstat -an | grep $http_host:$http_port
 then
     assert_msg "port $http_host:$http_port"
-    kill  $pid
+    $ut_server --demo --action stop
     exit 2
 fi
 
-kill  $pid
+$ut_server --demo --action stop
 
 echo "After: $pid"
 ps -elf | grep $pid
