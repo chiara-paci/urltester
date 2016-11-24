@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# /etc/rc.d/init.d/urltester
+#
+# UrlTester
+#
+# chkconfig: 2345 20 80
+# description: urltester
+# processname: urltester
+# config: /usr/local/urltester/UrlTester/etc/urltester.conf
+# pidfile: /usr/local/urltester/UrlTester/var/run/urltester.pid
+# probe: true
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+URLTESTER_BASE=/usr/local/urltester
+SOFTWARE_BASE=$URLTESTER_BASE/software
+URLTESTER_HOME=$URLTESTER_BASE/UrlTester
+# URLTESTER_LOCK=/var/lock/subsys/urltester
+URLTESTER_LOCK=""
+
+BASE_CONTEXT=/urltester
+
+export PATH=$SOFTWARE_BASE/bin:$PATH
+export LD_LIBRARY_PATH=$SOFTWARE_BASE/lib:$LD_LIBRARY_PATH
+
+PROXY_HOST='192.168.155.42'
+PROXY_PORT='8000'
+
+#<define any local shell functions used by the code that follows>
+
+settings=""
+
+if [ "$BASE_CONTEXT" ]
+then
+    settings="$settings --base_context=$BASE_CONTEXT"
+fi
+
+if [ "$PROXY_HOST" ]
+then
+    settings="$settings --proxy_host=$PROXY_HOST"
+    if [ "$PROXY_PORT" ]
+    then
+	settings="$settings --proxy_port=$PROXY_PORT"
+    fi
+fi
+
+start() {
+    echo -n "Starting urltester: "
+    $URLTESTER_HOME/bin/urltester $settings --server --action=start
+    ret=$?
+    if [ "$URLTESTER_LOCK" ]
+    then
+	touch /var/lock/subsys/urltester
+    fi
+    return $ret
+}	
+
+stop() {
+    echo -n "Shutting down urltester: "
+    $URLTESTER_HOME/bin/urltester --server --action=stop
+    ret=$?
+    if [ "$URLTESTER_LOCK" ]
+    then
+	rm -f /var/lock/subsys/urltester
+    fi
+    return $ret
+}
+
+restart() {
+    echo -n "Restarting urltester: "
+    $URLTESTER_HOME/bin/urltester  $settings --server --action=restart
+    ret=$?
+    touch /var/lock/subsys/urltester
+    return $ret
+}
+
+status() {
+    $URLTESTER_HOME/bin/urltester --server --action=status
+}
+
+showconfig() {
+    $URLTESTER_HOME/bin/urltester $settings --show_config
+}
+
+action="$1"
+
+case "$1" in
+    start|stop|status|restart|reload|condrestart|showconfig)
+	$action
+	;;
+    *)
+	echo "Usage: urltester {start|stop|status|reload|restart|condrestart|showconfig}"
+	exit 1
+	;;
+esac
+exit $?
+
+

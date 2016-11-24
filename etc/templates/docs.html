@@ -9,7 +9,10 @@
   <li class="toc1"><a href="#standalone">3. Configurazione come server standalone</a></li>
   <li class="toc1"><a href="#proxy">4. Configurazione come server con un reverse proxy</a>
   <li class="toc2"><a href="#proxyut">4.1. Configurazione di UrlTester</a></li>
-  <li class="toc2"><a href="#proxyapache">4.2. Configurazione di Apache HTTP Server</a></li>
+  <li class="toc2">
+    <a href="#proxyapache">4.2. Configurazione di Apache HTTP Server (parte statica servita da UrlTester)</a></li>
+  <li class="toc2">
+    <a href="#proxyapache2">4.3. Configurazione di Apache HTTP Server (parte statica servita da Apache HTTP Server)</a></li>
   <li class="toc1"><a href="#test">5. Configurazione dei test</a></li>
 </ul>
 
@@ -70,21 +73,21 @@ LoadModule wsgi_module path_di_mod_wsgi
 
 Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
 
-<Directory /usr/local/urltester/UrlTester/static/>
+&lt;Directory /usr/local/urltester/UrlTester/static/&gt;
      #Require all granted
      AllowOverride None
      Order allow,deny
      Allow from all
-</Directory>
+&lt;/Directory&gt;
 
 WSGIScriptAlias /urltester /usr/local/urltester/UrlTester/wsgi/urltester.wsgi
  
-<Directory /usr/local/urltester/UrlTester/wsgi>
+&lt;Directory /usr/local/urltester/UrlTester/wsgi&gt;
     #Require all granted
     AllowOverride None
     Order allow,deny
     Allow from all
-</Directory>
+&lt;/Directory&gt;
 
 </pre>
 
@@ -96,8 +99,10 @@ WSGIScriptAlias /urltester /usr/local/urltester/UrlTester/wsgi/urltester.wsgi
 <p>È sufficiente avviare <tt>urltester</tt> in modalità server, specificando che deve servire anche la parte statica:</p>
 
 <pre>
-$ bin/urltester --server --serve_static
+$ bin/urltester --server --serve_static --action=start
 </pre>
+
+<p>Le <i>action</i> possibili sono start, stop, restart o status.</p>
 
 <p>Vedere l'help per l'elenco completo delle opzioni:</p>
 
@@ -105,46 +110,58 @@ $ bin/urltester --server --serve_static
 $ bin/urltester --help
 </pre>
 
+
+
 <a name="proxy"></a>
 <h1>4. Configurazione come server con un reverse proxy</h1>
 
 <a name="proxyut"></a>
 <h2>4.1. Configurazione di UrlTester</h2>
 
-
 <p>Bisogna  far partire  UrlTester  come server,  indicando lo  stesso
 context  previsto lato  reverse proxy  (/urltester nell'esempio)  come
 base_context.</p>
 
 <pre>
-$ bin/urltester --server --base_context="/urltester"
+$ bin/urltester --server --base_context="/urltester" --action=start
 </pre>
 
 <p>È possibile far servire la parte statica a UrlTester (con l'opzione
---serve_static), anche se è preferibile che sia il reverse proxy a
+<tt>--serve_static</tt>), anche se è preferibile che sia il reverse proxy a
 farlo direttamente.</p>
 
 <a name="proxyapache"></a>
-<h2>4.2. Configurazione di Apache HTTP Server</h2>
-
-<p>Per servire la parte statica (deve precedere il resto):</p>
-
-<pre>
-Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
-
-<Directory /usr/local/urltester/UrlTester/static/>
-     #Require all granted
-     AllowOverride None
-     Order allow,deny
-     Allow from all
-</Directory>
-</pre>
+<h2>4.2. Configurazione di Apache HTTP Server (parte statica servita da UrlTester)</h2>
 
 <p>Configurazione del reverse proxy:</p>
 
 <pre>
 ProxyPass "/urltester" "http://127.0.0.1:9876/urltester"
 ProxyPassReverse "/urltester" "http://127.0.0.1:9876/urltester"
+</pre>
+
+<a name="proxyapache2"></a>
+<h2>4.3. Configurazione di Apache HTTP Server (parte statica servita da Apache HTTP Server)</h2>
+
+<p>Per servire la parte statica (deve precedere il resto):</p>
+
+<pre>
+Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
+
+&lt;Directory /usr/local/urltester/UrlTester/static/&gt;
+     #Require all granted
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+&lt;/Directory&gt;
+</pre>
+
+<p>Configurazione del reverse proxy:</p>
+
+<pre>
+ProxyPass        "/urltester/static/" "!"
+ProxyPass        "/urltester"         "http://127.0.0.1:9876/urltester"
+ProxyPassReverse "/urltester"         "http://127.0.0.1:9876/urltester"
 </pre>
 
 <a name="test"></a>
