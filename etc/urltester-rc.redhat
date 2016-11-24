@@ -73,7 +73,10 @@ restart() {
     echo -n "Restarting urltester: "
     $URLTESTER_HOME/bin/urltester  $settings --server --action=restart
     ret=$?
-    touch /var/lock/subsys/urltester
+    if [ "$URLTESTER_LOCK" ]
+    then
+	touch /var/lock/subsys/urltester
+    fi
     return $ret
 }
 
