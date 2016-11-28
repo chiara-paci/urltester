@@ -8,6 +8,7 @@ flist="$flist LICENSE"
 flist="$flist README.md"
 flist="$flist .gitignore"
 flist="$flist devupdate"
+flist="$flist doc.txt"
 
 flist="$flist bin"
 flist="$flist lib"

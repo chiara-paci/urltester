@@ -1,0 +1,227 @@
+UrlTester
+=========
+
+1. Configurazione dell'installazione
+2. Configurazione come WSGI
+  2.1. Configurazione di UrlTester
+  2.2. Configurazione di Apache HTTP Server
+3. Configurazione come server standalone
+4. Configurazione come server con un reverse proxy
+  4.1. Configurazione di UrlTester
+  4.2. Configurazione di Apache HTTP  Server (parte statica servita da
+       UrlTester)
+  4.3. Configurazione di Apache HTTP  Server (parte statica servita da
+       Apache HTTP Server)
+5. Configurazione dei test
+6. Configurazione del monitoraggio
+
+1. Configurazione dell'installazione
+------------------------------------
+
+Bisogna editare il file lib/python/urltester/config.py, in particolare
+BASE_DIR deve corrispondere al path di installazione di UrlTester.
+
+2. Configurazione come WSGI
+---------------------------
+
+2.1. Configurazione di UrlTester
+
+In   wsgi/urltester.wsgi  è   necessario   passare   i  parametri   di
+configurazione all'oggetto Settings:
+
+...
+settings=urltester.config.Settings(param1=val1, param2=val2, ...)
+...
+
+Parametri di configurazione:
+
+param           type        default
+
+http_host       string      localhost         
+http_port       int         9876         
+paths           string/list [u'/usr/local/urltester/UrlTester/etc/urltester.conf']         
+title           string      UrlTester         
+template_dir    string      /usr/local/urltester/UrlTester/etc/templates         
+proxy_host      string                 
+proxy_port      int         3128         
+proxy_user      string                 
+proxy_password  string                 
+base_context    string                 
+static_dir      string      /usr/local/urltester/UrlTester/static         
+serve_static    string      False         
+
+
+2.2. Configurazione di Apache HTTP Server
+
+La parte  statica e il  modulo wsgi  devono essere configurati  con lo
+stesso prefisso (/urltester nell'esempio):
+
+LoadModule wsgi_module path_di_mod_wsgi
+
+Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
+
+<Directory /usr/local/urltester/UrlTester/static/>
+     #Require all granted
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+</Directory>
+
+WSGIScriptAlias /urltester /usr/local/urltester/UrlTester/wsgi/urltester.wsgi
+ 
+<Directory /usr/local/urltester/UrlTester/wsgi>
+    #Require all granted
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+
+Path di mod_wsgi è ad esempio:
+
+/usr/local/urltester/software/lib/python2.7/site-packages/mod_wsgi/server/mod_wsgi-py27.so.
+
+3. Configurazione come server standalone
+----------------------------------------
+
+È sufficiente avviare urltester in modalità server, specificando che
+deve servire anche la parte statica:
+
+$ bin/urltester --server --serve_static --action=start
+
+Le action possibili sono start, stop, restart o status.
+
+Vedere l'help per l'elenco completo delle opzioni:
+
+$ bin/urltester --help
+
+4. Configurazione come server con un reverse proxy
+--------------------------------------------------
+
+4.1. Configurazione di UrlTester
+
+Bisogna far partire UrlTester come server, indicando lo stesso context
+previsto   lato   reverse   proxy   (/urltester   nell'esempio)   come
+base_context.
+
+$ bin/urltester --server --base_context="/urltester" --action=start
+
+È possibile  far servire la  parte statica a UrlTester  (con l'opzione
+--serve_static), anche  se è  preferibile che sia  il reverse  proxy a
+farlo direttamente.
+
+4.2. Configurazione  di Apache HTTP  Server (parte statica  servita da
+     UrlTester)
+
+Configurazione del reverse proxy:
+
+ProxyPass "/urltester" "http://127.0.0.1:9876/urltester"
+ProxyPassReverse "/urltester" "http://127.0.0.1:9876/urltester"
+
+4.3. Configurazione  di Apache HTTP  Server (parte statica  servita da
+     Apache HTTP Server)
+
+Per servire la parte statica (deve precedere il resto):
+
+Alias /urltester/static/ /usr/local/urltester/UrlTester/static/
+
+<Directory /usr/local/urltester/UrlTester/static/>
+     #Require all granted
+     AllowOverride None
+     Order allow,deny
+     Allow from all
+</Directory>
+
+Configurazione del reverse proxy:
+
+ProxyPass        "/urltester/static/" "!"
+ProxyPass        "/urltester"         "http://127.0.0.1:9876/urltester"
+ProxyPassReverse "/urltester"         "http://127.0.0.1:9876/urltester"
+
+5. Configurazione dei test
+--------------------------
+
+I test sono descritti nei  file di configurazione del parametro /path/
+della configurazione di WSGI <#conwsgi>
+
+I file di  configurazione sono file json, con una  lista di stanze che
+definiscono il test da eseguire:
+
+[
+    {
+        "context": "gianozia", 
+        "title": "Gianozia Orientale", 
+        "url": "http://www.gianoziaorientale.org", 
+        "affects": "D,F,G", 
+        "timeout": 20, 
+        "status_ok": "any"
+    }, 
+    {
+        "context": "google-errore", 
+        "title": "Google Errore", 
+        "url": "http://www.google.it/yssuhaajjakd", 
+        "affects": "D,F,G", 
+        "timeout": 20, 
+        "status_ok": "any"
+    }, 
+    ...
+]
+
+Parametri:
+
+param                 type         mand.  default description
+
+context               str          x              context della pagina del test
+url                   str          x              url da testare
+title                 str          x              nome descrittivo del test
+affects               str          x              elenco dei sistemi impattati
+timeout               float        x              timeout per l'apertura dell'url
+status_ok             int/str/list x              status http che sono considerati validi (v. sotto)
+no_ssl_v2             bool                 false  escludere l'SSLv2
+no_ssl_v3             bool                 false  escludere l'SSLv3
+ssl_check_certificate bool                 true   verificare la validità del certificato ssl
+ssl_client_key        str                         chiave per autenticazione del client
+ssl_client_cert       str                         certificato per autenticazione del client
+ssl_cipher            str                         tipi di crittografia ammessi (in formato openssl)
+
+Gli stati http validi possono essere specificati come:
+
+  * La  stringa  "any": tutti  gli  stati  sono considerati  validi  e
+    vengono segnalati solo gli errori di connessione.
+
+  * Un numero o una stringa numerica (ad es. 200).
+
+  * Una   stringa  <start>:<end>   che   indica   un  range   (estremi
+    inclusi). Ad es. "1:3" = 1,2,3
+
+  * Una  stringa "<start>:<step>:<end>  che indica  un range  (estremi
+    inclusi) di valori ogni <step>. Ad es. "3:2:9" = 3,5,7,9.
+
+  * Una lista  di elementi come  quelli dei punti  precedenti (eccetto
+    "any"). Ad es. [ 100, "200:299", "404:3:500" ].
+
+Sono stati aggiunti due stati speciali, 600 e 601, che indicano errori
+nell'SSL segnalati dal server (cioè in cui è sicuro che la connessione
+è andata a buon fine), ad esempio perché il certificato presentato dal
+client non è valido.
+
+6. Configurazione del monitoraggio
+----------------------------------
+
+Il monitoraggio dev'essere impostato per cercare la stringa "OK" e/o "KO".
+
+Lo status "OK" può essere identificato da:
+
+<div class="status backyellow"><i class="fa fa-thumbs-o-up"></i> OK</div>
+
+oppure:
+
+<div class="status backgreen"><i class="fa fa-thumbs-o-up"></i> OK</div>
+
+Lo status "KO" può essere identificato da:
+
+<div class="status backred"><i class="fa fa-thumbs-o-down"></i> KO</div>
+
+
+
+--------------------------------------------------
+© 2016 Engineering.mo S.p.A. <http://www.eng.it/>

@@ -14,6 +14,7 @@
   <li class="toc2">
     <a href="#proxyapache2">4.3. Configurazione di Apache HTTP Server (parte statica servita da Apache HTTP Server)</a></li>
   <li class="toc1"><a href="#test">5. Configurazione dei test</a></li>
+  <li class="toc1"><a href="#mon">6. Configurazione del monitoraggio</a></li>
 </ul>
 
 <a name="install"></a>
@@ -236,5 +237,26 @@ inclusi) di valori ogni <i>step</i>. Ad es. "3:2:9" = 3,5,7,9.</li>
 errori nell'SSL  segnalati dal  server (cioè  in cui  è sicuro  che la
 connessione  è andata  a buon  fine),  ad esempio  perché il  certificato
 presentato dal client non è valido.</p>
+
+<a name="mon"></a>
+<h1>6. Configurazione del monitoraggio</h1>
+
+<p>Il monitoraggio dev'essere impostato per cercare la stringa "OK" e/o "KO".</p>
+
+<p>Lo status "OK" può essere identificato da:</p>
+
+<pre>
+&lt;div class="status backyellow"&gt;&lt;i class="fa fa-thumbs-o-up"&gt;&lt;/i&gt; OK&lt;/div&gt;
+</pre>
+oppure:
+<pre>
+&lt;div class="status backgreen"&gt;&lt;i class="fa fa-thumbs-o-up"&gt;&lt;/i&gt; OK&lt;/div&gt;
+</pre>
+
+<p>Lo status "KO" può essere identificato da:</p>
+
+<pre>
+&lt;div class="status backred"&gt;&lt;i class="fa fa-thumbs-o-down"&gt;&lt;/i&gt; KO&lt;/div&gt;
+</pre>
 
 {% endblock %}
